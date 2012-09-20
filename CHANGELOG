@@ -1,0 +1,55 @@
+Fake86 changelog for v0.12.9.19
+
+v0.12.9.19:
+  - Fixed bug from v0.12.9.16 where the call to createscalemap() in the
+    VideoThread() function was placed before the mutex lock, sometimes causing
+    crashes when Fake86 first loads. (due to an uninitialized pointer)
+
+  - Fixed bug in imagegen that made it crash on some Windows systems.
+
+
+v0.12.9.16:
+  - Fixed bug from v0.12.9.12 that caused faulty CPU emulation on big-endian
+    host CPUs, such as the PowerPC.
+
+  - Fixed another bug from v0.12.9.12 that caused colors to be incorrect on
+    big-endian host CPUs.
+
+  - Added "-slowsys" command line option that can be used to fix audio dropout
+    issues on very slow host CPUs by decreasing audio generation quality.
+
+  - Added another stretching function that is used when the SDL window is
+    exactly double of the width and height of the emulated video. Only active
+    when no smoothing method has been specified. This saves the CPU a lot of
+    work since we now only need to calculate the color to draw once for every
+    four pixels, instead of recalculating the same color for every pixel
+    This makes difference between smooth video and jerky, useless video on
+    very old systems such as my 400 MHz PowerPC G3 iMac.
+
+  - Added an obvious speed tweak which I should have had all along by
+    generating a "scale map" lookup table once on every screen mode change.
+    we no longer need to make expensive floating point scale calculations on
+    every pixel in every frame. The speed boost is very noticeable on slower
+    machines such as those with a Pentium 4 or older CPU.
+
+  - No longer distributing IBM's ROM BASIC bundled with Fake86 out of legal
+    concern. Is it very old? Yes. Does IBM care? Likely not, but they still
+    hold the copyright. You can still use ROM BASIC by providing your own ROM
+    dump. It should be 32,768 bytes in size, and must be named "rombasic.bin"
+    without the quotes. After building and installing Fake86, you need to put
+    the ROM dump in "/usr/share/fake86/" unless you explicitly changed the
+    path in the makefile. In the case of running under Windows, the file
+    should be placed in the same directory as the executable.
+
+  - Created and included a new makefile, this one customized to work in
+    Haiku OS. More information about Haiku at their website:
+    http://www.haiku-os.org
+
+
+v0.12.9.12:
+  - Around 80% of this version is a rewrite compared to all older versions of
+    v0.11.7.22 and prior, and I am considering it a "fresh start". Older
+    releases will no longer be officially available, and are to be considered
+    obsolete. This fresh code base has far too many bugfixes, tweaks, design,
+    layout, and speed improvements to even bother putting together a list of
+    changes.

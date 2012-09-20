@@ -1,0 +1,25 @@
+Compilation and installation notes for Fake86 on Linux:
+
+Sorry, but there is no configure script written for Fake86 yet.
+All my Linux-based testing has been done with Debian Squeeze 6.0,
+both 32 and 64 bit versions. It will use gcc.
+
+Required libraries:
+libSDL 1.2
+libpcap (Optional, only needed if using makefile.pcap)
+
+Debian users can install them all with this command:
+apt-get install libsdl1.2debian-all libsdl1.2-dev libpcap0.8 libpcap0.8-dev
+
+To compile and install Fake86 without ethernet emulation support:
+make
+sudo make install
+
+To compile and install Fake86 WITH ethernet emulation support:
+make -f makefile.pcap
+sudo make -f makefile.pcap install
+
+Usage note:
+Just a reminder, Fake86 needs to be invoked via command line
+and requires some parameters to work. Run "fake86 -h" to get
+a listing of valid arguments.

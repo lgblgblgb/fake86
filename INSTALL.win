@@ -1,0 +1,41 @@
+Compilation and installation notes for Fake86 on Windows:
+
+If you do not plan to look at or modify the source code, you can
+just delete this archive and use the pre-compiled Win32 build of
+Fake86 instead!
+
+It is highly recommended that you use Visual Studio 2010 to compile
+Fake86. The solution file is included in the "win32\" folder. You should
+be able to compile with MinGW as well, but I have not tested it myself.
+It will require some minor modifications, and a custom makefile.
+
+Compiler requirements:
+ - You will need libSDL 1.2.15 development library for Visual C++.
+   You can download this from:
+   http://www.libsdl.org/release/SDL-devel-1.2.15-VC.zip
+
+ - To enable ethernet emulation, you will also need to install the
+   WinPCap library and developer's pack. This is available at:
+   http://www.winpcap.org
+
+ - Create a directory named "SDL" in your Visual C++ include path,
+   and then copy the contents of the "SDL-1.2.15\include\" folder
+   from that archive into it.
+
+ - Next, copy the two ".lib" files from the "SDL-1.2.15\lib\x86\"
+   folder in that archive into it. Also copy "SDL.dll" into the
+   folder "fake86-version\win32\bin\" from this source archive.
+
+This should allow you to compile successfully! After a successful
+compile, the final Fake86.exe and Imagegen.exe files will be in
+"fake86-version\win32\bin\". You will also need the files in "data\"
+as well as "SDL.dll" to be in the same folder as "Fake86.exe" for
+it to run properly.
+
+Navigate to that folder in a command prompt window. You should
+then be able to run the software.
+
+Usage note:
+Just a reminder, Fake86 needs to be invoked via command line
+and requires some parameters to work. Run "fake86 -h" to get
+a listing of valid arguments.

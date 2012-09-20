@@ -1,0 +1,6 @@
+For info on compiling for OS X, see the file INSTALL.linux as the instructions
+are identical if you are compiling only for your native CPU.
+
+If you would rather build a universal binary for OS X, the same instructions
+should still be followed, except you need to add " -f makefile.osxuni " as an
+option for all make commands.

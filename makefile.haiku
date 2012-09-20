@@ -1,0 +1,40 @@
+SRCFILES=src/fake86/*.c
+BINPATH=/boot/system/bin
+DATAPATH=/boot/common/data/fake86
+CFLAGS=-O2 -DPATH_DATAFILES=\"$(DATAPATH)/\"
+INCLUDE=-Isrc/fake86
+LIBS=
+SDLFLAGS=`sdl-config --cflags --libs`
+
+all: fake86-src imagegen-src
+
+fake86-src:
+	$(CC) $(SRCFILES) -o bin/fake86 $(CFLAGS) $(INCLUDE) $(LIBS) $(SDLFLAGS)
+	chmod a+x bin/fake86
+
+imagegen-src:
+	$(CC) src/imagegen/imagegen.c -o bin/imagegen $(CFLAGS)
+	chmod a+x bin/imagegen
+
+install:
+	mkdir -p $(BINPATH)
+	mkdir -p $(DATAPATH)
+	cp bin/fake86 $(BINPATH)
+	cp bin/imagegen $(BINPATH)
+	cp data/asciivga.dat $(DATAPATH)
+	cp data/pcxtbios.bin $(DATAPATH)
+	cp data/videorom.bin $(DATAPATH)
+	chmod a+x $(BINPATH)/fake86
+	chmod a+x $(BINPATH)/imagegen
+
+clean:
+	rm -f src/fake86/*.o
+	rm -f src/fake86/*~
+	rm -f src/imagegen/*.o
+	rm -f src/imagegen/*~
+	rm -f bin/fake86
+	rm -f bin/imagegen
+
+uninstall:
+	rm -f $(BINPATH)/fake86
+	rm -f $(BINPATH)/imagegen

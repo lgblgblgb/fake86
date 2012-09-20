@@ -1,0 +1,19 @@
+Compilation and installation notes for Fake86 on Haiku OS:
+
+At the time of this writing, Haiku is still in Alpha stage. This means
+that everything I'm telling you here could be inaccurate as soon as
+tomorrow. I don't make any promises of correct functionaly in Haiku,
+and I can only say that this worked for me on Haiku R1 Alpha 3. Your
+mileage may vary.
+
+Required libraries:
+libSDL 1.2
+
+To compile and install Fake86 without ethernet emulation support:
+make -f makefile.haiku
+make -f makefile.haiku install
+
+Usage note:
+Just a reminder, Fake86 needs to be invoked via command line
+and requires some parameters to work. Run "fake86 -h" to get
+a listing of valid arguments.
