@@ -113,5 +113,8 @@
     <ClInclude Include="..\src\fake86\sermouse.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\fake86\modregrm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

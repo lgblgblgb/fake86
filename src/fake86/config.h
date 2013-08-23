@@ -1,6 +1,41 @@
-//when CPU_V20 is defined, Fake86's CPU emulator acts like an 80186/V20.
-//otherwise, it acts like a true 8086/8088
+#ifndef __CONFIG_H__
+#define __CONFIG_H__
+
+//be sure to only define ONE of the CPU_* options at any given time, or
+//you will likely get some unexpected/bad results!
+//#define CPU_8086
+//#define CPU_186
 #define CPU_V20
+//#define CPU_286
+//#define CPU_386
+
+#if defined(CPU_8086)
+	#define CPU_CLEAR_ZF_ON_MUL
+	#define CPU_ALLOW_POP_CS
+#else
+	#define CPU_ALLOW_ILLEGAL_OP_EXCEPTION
+	#define CPU_LIMIT_SHIFT_COUNT
+#endif
+
+#if defined(CPU_V20)
+	#define CPU_NO_SALC
+#endif
+
+#if defined(CPU_286) || defined(CPU_386)
+	#define CPU_286_STYLE_PUSH_SP
+#else
+	#define CPU_SET_HIGH_FLAGS
+#endif
+
+
+//when USE_PREFETCH_QUEUE is defined, Fake86's CPU emulator uses a 6-byte
+//read-ahead cache for opcode fetches just as a real 8086/8088 does.
+//by default, i just leave this disabled because it wastes a very very
+//small amount of CPU power. however, for the sake of more accurate
+//emulation, it can be enabled by uncommenting the line below and recompiling.
+//#define USE_PREFETCH_QUEUE
+
+//#define CPU_ADDR_MODE_CACHE
 
 //when compiled with network support, fake86 needs libpcap/winpcap.
 //if it is disabled, the ethernet card is still emulated, but no actual
@@ -18,3 +53,6 @@
 
 //#define DEBUG_BLASTER
 //#define DEBUG_DMA
+
+//#define BENCHMARK_BIOS
+#endif

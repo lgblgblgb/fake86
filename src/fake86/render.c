@@ -352,8 +352,8 @@ void draw () {
 									color = fontcga[curchar*128 + (y%16) *8 + ( (x/divx) %8) ];
 								}
 							if (vidcolor) {
-									if (!color) if (portram[0x3D8]&128) color = palettecga[ (RAM[vidptr+1]/16) &7];
-										else color = palettecga[RAM[vidptr+1]/16]; //high intensity background
+									/*if (!color) if (portram[0x3D8]&128) color = palettecga[ (RAM[vidptr+1]/16) &7];
+										else*/ if (!color) color = palettecga[RAM[vidptr+1]/16]; //high intensity background
 									else color = palettecga[RAM[vidptr+1]&15];
 								}
 							else {
@@ -412,14 +412,15 @@ void draw () {
 			case 6:
 				nw = 640;
 				nh = 200;
-				for (y=0; y<200; y++) {
+				for (y=0; y<400; y+=2) {
 						for (x=0; x<640; x++) {
 								charx = x;
-								chary = y;
+								chary = y >> 1;
 								vidptr = videobase + ( (chary>>1) * 80) + ( (chary&1) * 8192) + (charx>>3);
 								curpixel = (RAM[vidptr]>> (7- (charx&7) ) ) &1;
 								color = palettecga[curpixel*15];
 								prestretch[y][x] = color;
+								prestretch[y+1][x] = color;
 							}
 					}
 				break;
@@ -490,9 +491,9 @@ void draw () {
 							vidptr = y*80 + (x>>3);
 							x1 = 7 - (x & 7);
 							color = (VRAM[vidptr] >> x1) & 1;
-							color += ( ( (VRAM[0x10000 + vidptr] >> x1) & 1) << 1);
-							color += ( ( (VRAM[0x20000 + vidptr] >> x1) & 1) << 2);
-							color += ( ( (VRAM[0x30000 + vidptr] >> x1) & 1) << 3);
+							color |= ( ( (VRAM[0x10000 + vidptr] >> x1) & 1) << 1);
+							color |= ( ( (VRAM[0x20000 + vidptr] >> x1) & 1) << 2);
+							color |= ( ( (VRAM[0x30000 + vidptr] >> x1) & 1) << 3);
 							color = palettevga[color];
 							prestretch[y][x] = color;
 						}

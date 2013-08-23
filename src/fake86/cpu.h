@@ -61,6 +61,20 @@ union _bytewordregs_ {
 	uint8_t byteregs[8];
 };
 
+#ifdef CPU_ADDR_MODE_CACHE
+struct addrmodecache_s {
+	uint16_t exitcs;
+	uint16_t exitip;
+	uint16_t disp16;
+	uint32_t len;
+	uint8_t mode;
+	uint8_t reg;
+	uint8_t rm;
+	uint8_t forcess;
+	uint8_t valid;
+};
+#endif
+
 #define StepIP(x)	ip += x
 #define getmem8(x, y)	read86(segbase(x) + y)
 #define getmem16(x, y)	readw86(segbase(x) + y)
@@ -75,3 +89,22 @@ union _bytewordregs_ {
 #define getsegreg(regid)	segregs[regid]
 #define putsegreg(regid, writeval)	segregs[regid] = writeval
 #define segbase(x)	((uint32_t) x << 4)
+
+#define makeflagsword() \
+	( \
+	2 | (uint16_t) cf | ((uint16_t) pf << 2) | ((uint16_t) af << 4) | ((uint16_t) zf << 6) | ((uint16_t) sf << 7) | \
+	((uint16_t) tf << 8) | ((uint16_t) ifl << 9) | ((uint16_t) df << 10) | ((uint16_t) of << 11) \
+	)
+
+#define decodeflagsword(x) { \
+	temp16 = x; \
+	cf = temp16 & 1; \
+	pf = (temp16 >> 2) & 1; \
+	af = (temp16 >> 4) & 1; \
+	zf = (temp16 >> 6) & 1; \
+	sf = (temp16 >> 7) & 1; \
+	tf = (temp16 >> 8) & 1; \
+	ifl = (temp16 >> 9) & 1; \
+	df = (temp16 >> 10) & 1; \
+	of = (temp16 >> 11) & 1; \
+	}

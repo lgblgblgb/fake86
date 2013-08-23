@@ -47,6 +47,7 @@ extern int16_t adlibgensample();
 extern int16_t speakergensample();
 extern int16_t getssourcebyte();
 extern int16_t getBlasterSample();
+extern uint8_t usessource;
 
 void create_output_wav (uint8_t *filename) {
 	printf ("Creating %s for audio logging... ", filename);
@@ -86,14 +87,10 @@ void tickaudio() {
 	int16_t sample;
 	if (audbufptr >= usebuffersize) return;
 	sample = adlibgensample() >> 4;
-	//sample += getssourcebyte();
+	if (usessource) sample += getssourcebyte();
 	sample += getBlasterSample();
 	if (speakerenabled) sample += (speakergensample() >> 1);
-	if (audbufptr < sizeof(audbuf) ) audbuf[audbufptr++] = (uint8_t) 
-( 
-(uint16_t) sample+128);
-	//if ((cursampnum % doublesamplecount) == 0) audbuf[audbufptr++] = (int8_t)sample;
-	//cursampnum++;
+	if (audbufptr < sizeof(audbuf) ) audbuf[audbufptr++] = (uint8_t) ((uint16_t) sample+128);
 }
 
 extern uint64_t timinginterval;
@@ -101,13 +98,6 @@ extern void inittiming();
 void fill_audio (void *udata, int8_t *stream, int len) {
 	memcpy (stream, audbuf, len);
 	memmove (audbuf, &audbuf[len], usebuffersize - len);
-
-	/*sampcount += len;
-	while (sampcount >= 2400) {
-	sprintf(&bmpfilename[0], "j:\\bmp\\%08u.bmp", framecount++);
-	_beginthread(savepic, 0, NULL);
-	sampcount -= 2400;
-	}*/
 
 	audbufptr -= len;
 	if (audbufptr < 0) audbufptr = 0;
@@ -141,7 +131,7 @@ void initaudio() {
 
 	memset (audbuf, 128, sizeof (audbuf) );
 	audbufptr = usebuffersize;
-	//create_output_wav("fake86.raw");
+	//create_output_wav("fake86.wav");
 	SDL_PauseAudio (0);
 	return;
 }
@@ -150,8 +140,8 @@ void killaudio() {
 	SDL_PauseAudio (1);
 
 	if (wav_file == NULL) return;
-	//wav_hdr.ChunkSize = wav_hdr.Subchunk2Size + sizeof(wav_hdr) - 8;
-	//fseek(wav_file, 0, SEEK_SET);
-	//fwrite((void *)&wav_hdr, 1, sizeof(wav_hdr), wav_file);
+	wav_hdr.ChunkSize = wav_hdr.Subchunk2Size + sizeof(wav_hdr) - 8;
+	fseek(wav_file, 0, SEEK_SET);
+	fwrite((void *)&wav_hdr, 1, sizeof(wav_hdr), wav_file);
 	fclose (wav_file);
 }

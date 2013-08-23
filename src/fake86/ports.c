@@ -38,9 +38,10 @@ void * (port_read_callback[0x10000]);
 void * (port_write_callback16[0x10000]);
 void * (port_read_callback16[0x10000]);
 
+extern uint8_t verbose;
 void portout (uint16_t portnum, uint8_t value) {
 	portram[portnum] = value;
-	//printf("portout(0x%X, 0x%02X);\n", portnum, value);
+	//if (verbose) printf("portout(0x%X, 0x%02X);\n", portnum, value);
 	switch (portnum) {
 			case 0x61:
 				if ( (value & 3) == 3) speakerenabled = 1;
@@ -52,7 +53,7 @@ void portout (uint16_t portnum, uint8_t value) {
 }
 
 uint8_t portin (uint16_t portnum) {
-	//printf("portin(0x%X);\n", portnum);
+	//if (verbose) printf("portin(0x%X);\n", portnum);
 	switch (portnum) {
 			case 0x62:
 				return (0x00);

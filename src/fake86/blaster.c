@@ -59,6 +59,7 @@ void cmdBlaster (uint8_t value) {
 						break;
 					case 0x14: //8-bit single block DMA output
 					case 0x24:
+					case 0x91:
 						if (blaster.waitforarg == 2) {
 								blaster.blocksize = (blaster.blocksize & 0xFF00) | (uint32_t) value;
 								blaster.waitforarg = 3;
@@ -121,6 +122,7 @@ void cmdBlaster (uint8_t value) {
 			case 0x14: //8-bit single block DMA output
 			case 0x24:
 			case 0x48:
+			case 0x91:
 				blaster.waitforarg = 2;
 				break;
 
@@ -223,10 +225,10 @@ uint8_t inBlaster (uint16_t portnum) {
 #ifdef DEBUG_BLASTER
 	static uint16_t lastread = 0;
 #endif
-	portnum &= 0xF;
 #ifdef DEBUG_BLASTER
-	if (lastread != portnum) printf ("[DEBUG] inBlaster: port %Xh, value ", 0x220 + portnum);
+	if (lastread != portnum) printf ("[DEBUG] inBlaster: port %Xh, value ", portnum);
 #endif
+	portnum &= 0xF;
 	switch (portnum) {
 			case 0x0:
 			case 0x8:
@@ -301,7 +303,7 @@ void mixerReset() {
 void initBlaster (uint16_t baseport, uint8_t irq) {
 	//sbout = fopen("sbout.raw", "wb");
 	memset (&blaster, 0, sizeof (blaster) );
-	blaster.dspmaj = 3; //emulate a Sound Blaster Pro
+	blaster.dspmaj = 2; //emulate a Sound Blaster Pro
 	blaster.dspmin = 0;
 	blaster.sbirq = irq;
 	blaster.sbdma = 1;

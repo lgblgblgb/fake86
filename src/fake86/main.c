@@ -35,7 +35,7 @@ CRITICAL_SECTION screenmutex;
 pthread_t consolethread;
 #endif
 
-const uint8_t *build = "Fake86 v0.12.9.19";
+const uint8_t *build = "Fake86 v0.13.7.25";
 
 extern uint8_t RAM[0x100000], readonly[0x100000];
 extern uint8_t running, renderbenchmark;
@@ -46,6 +46,10 @@ extern uint8_t initscreen (uint8_t *ver);
 extern void VideoThread();
 extern doscrmodechange();
 extern void handleinput();
+
+#ifdef CPU_ADDR_MODE_CACHE
+extern uint64_t cached_access_count, uncached_access_count;
+#endif
 
 extern uint8_t scrmodechange, doaudio;
 extern uint64_t totalexec, totalframes;
@@ -87,6 +91,25 @@ uint32_t loadrom (uint32_t addr32, uint8_t *filename, uint8_t failure_fatal) {
 			printf ("Loaded %s at 0x%05X (%lu KB)\n", filename, addr32, readsize >> 10);
 			return (readsize);
 		}
+}
+
+uint32_t loadbios (uint8_t *filename) {
+	FILE *binfile = NULL;
+	uint32_t readsize;
+
+	binfile = fopen (filename, "rb");
+	if (binfile == NULL) {
+			return (0);
+		}
+
+	fseek (binfile, 0, SEEK_END);
+	readsize = ftell (binfile);
+	fseek (binfile, 0, SEEK_SET);
+	fread ( (void *) &RAM[0x100000 - readsize], 1, readsize, binfile);
+	fclose (binfile);
+
+	memset ( (void *) &readonly[0x100000 - readsize], 1, readsize);
+	return (readsize);
 }
 
 extern uint32_t SDL_GetTicks();
@@ -178,18 +201,23 @@ void *runconsole (void *dummy);
 #endif
 extern void bufsermousedata (uint8_t value);
 int main (int argc, char *argv[]) {
-	printf ("%s (c)2010-2012 Mike Chambers\n", build);
+	uint32_t biossize;
+
+	printf ("%s (c)2010-2013 Mike Chambers\n", build);
 	printf ("[A portable, open-source 8086 PC emulator]\n\n");
 
 	parsecl (argc, argv);
 
 	memset (readonly, 0, 0x100000);
-	if (!loadrom (0xFE000UL, biosfile, 1) ) return (-1);
-	loadrom (0xF6000UL, PATH_DATAFILES "rombasic.bin", 0);
+	biossize = loadbios (biosfile);
+	if (!biossize) return (-1);
 #ifdef DISK_CONTROLLER_ATA
 	if (!loadrom (0xD0000UL, PATH_DATAFILES "ide_xt.bin", 1) ) return (-1);
 #endif
-	if (!loadrom (0xC0000UL, PATH_DATAFILES "videorom.bin", 1) ) return (-1);
+	if (biossize <= 8192) {
+		loadrom (0xF6000UL, PATH_DATAFILES "rombasic.bin", 0);
+		if (!loadrom (0xC0000UL, PATH_DATAFILES "videorom.bin", 1) ) return (-1);
+	}
 	printf ("\nInitializing CPU... ");
 	running = 1;
 	reset86();
@@ -212,6 +240,7 @@ int main (int argc, char *argv[]) {
 	lasttick = starttick = SDL_GetTicks();
 	while (running) {
 			exec86 (10000);
+	//printf("exec86 done\n");
 			handleinput();
 			if (scrmodechange) doscrmodechange();
 #ifdef NETWORKING_ENABLED
@@ -230,6 +259,11 @@ int main (int argc, char *argv[]) {
 
 	printf ("\n%llu instructions executed in %llu seconds.\n", totalexec, endtick);
 	printf ("Average speed: %llu instructions/second.\n", totalexec / endtick);
+
+#ifdef CPU_ADDR_MODE_CACHE
+	printf ("\n  Cached modregrm data access count: %llu\n", cached_access_count);
+	printf ("Uncached modregrm data access count: %llu\n", uncached_access_count);
+#endif
 
 	if (useconsole)	exit (0); //makes sure console thread quits even if blocking
 
