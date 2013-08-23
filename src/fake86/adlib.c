@@ -155,13 +155,9 @@ uint8_t inadlib (uint16_t portnum) {
 }
 
 uint16_t adlibfreq (uint8_t chan) {
-	//uint8_t downoct[4] = { 3, 2, 1, 0 };
-	//uint8_t upoct[3] = { 1, 2, 3 };
 	uint16_t tmpfreq;
 	if (!adlibch[chan].keyon) return (0);
 	tmpfreq = (uint16_t) adlibch[chan].convfreq;
-	//if (adlibch[chan].octave<4) tmpfreq = tmpfreq>>1;
-	//if (adlibch[chan].octave>4) tmpfreq = tmpfreq<<1;
 	switch (adlibch[chan].octave) {
 			case 0:
 				tmpfreq = tmpfreq >> 4;
@@ -175,7 +171,6 @@ uint16_t adlibfreq (uint8_t chan) {
 			case 3:
 				tmpfreq = tmpfreq >> 1;
 				break;
-				//case 4: tmpfreq = tmpfreq >> 1; break;
 			case 5:
 				tmpfreq = tmpfreq << 1;
 				break;
@@ -240,7 +235,6 @@ void tickadlib() {
 }
 
 void initadlib (uint16_t baseport) {
-	//samprateadjust = (double)44100.0 / usesamplerate;
 	set_port_write_redirector (baseport, baseport + 1, &outadlib);
 	set_port_read_redirector (baseport, baseport + 1, &inadlib);
 }

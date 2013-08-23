@@ -162,7 +162,6 @@ void diskhandler() {
 						regs.byteregs[regcl] = disk[regs.byteregs[regdl]].sects & 63;
 						regs.byteregs[regcl] = regs.byteregs[regcl] + (disk[regs.byteregs[regdl]].cyls/256) *64;
 						regs.byteregs[regdh] = disk[regs.byteregs[regdl]].heads - 1;
-						//segregs[reges] = 0; regs.wordregs[regdi] = 0x7C0B; //floppy parameter table
 						if (regs.byteregs[regdl]<0x80) {
 								regs.byteregs[regbl] = 4; //else regs.byteregs[regbl] = 0;
 								regs.byteregs[regdl] = 2;

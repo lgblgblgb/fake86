@@ -303,7 +303,7 @@ void mixerReset() {
 void initBlaster (uint16_t baseport, uint8_t irq) {
 	//sbout = fopen("sbout.raw", "wb");
 	memset (&blaster, 0, sizeof (blaster) );
-	blaster.dspmaj = 2; //emulate a Sound Blaster Pro
+	blaster.dspmaj = 2; //emulate a Sound Blaster 2.0
 	blaster.dspmin = 0;
 	blaster.sbirq = irq;
 	blaster.sbdma = 1;

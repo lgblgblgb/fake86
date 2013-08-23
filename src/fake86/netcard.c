@@ -61,9 +61,6 @@ void nethandler() {
 				segregs[regds] = 0xD000;
 				regs.wordregs[regsi] = 0x0000;
 				regs.wordregs[regcx] = net.pktlen;
-				/*for (i=0; i<net.pktlen; i++) {
-				 printf("%02X ", RAM[((uint32_t)segregs[regds] << 4) + (uint32_t)regs.wordregs[regsi] + i]);
-				} print("\n\n");*/
 				return;
 			case 0x03: //copy packet to final destination (given in ES:DI)
 				memcpy (&RAM[ ( (uint32_t) segregs[reges] << 4) + (uint32_t) regs.wordregs[regdi]], &RAM[0xD0000], net.pktlen);

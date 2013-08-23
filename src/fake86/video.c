@@ -823,12 +823,6 @@ uint32_t readmap;
 uint8_t readVGA (uint32_t addr32) {
 	uint32_t planesize;
 	planesize = 0x10000;
-	/*readmode = (VGA_GC[5] >> 3) & 1;
-	readmap = VGA_GC[4] & 3;
-	if (readmode == 0) {
-
-	}
-	return(0);*/
 
 	VGA_latch[0] = VRAM[addr32];
 	VGA_latch[1] = VRAM[addr32+planesize];
