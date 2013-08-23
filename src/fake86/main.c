@@ -35,7 +35,7 @@ CRITICAL_SECTION screenmutex;
 pthread_t consolethread;
 #endif
 
-const uint8_t *build = "Fake86 v0.13.7.25";
+const uint8_t *build = BUILD_STRING;
 
 extern uint8_t RAM[0x100000], readonly[0x100000];
 extern uint8_t running, renderbenchmark;

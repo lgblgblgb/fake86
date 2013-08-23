@@ -1,13 +1,14 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
+#define BUILD_STRING "Fake86 v0.13.8.23"
+
 //be sure to only define ONE of the CPU_* options at any given time, or
 //you will likely get some unexpected/bad results!
 //#define CPU_8086
 //#define CPU_186
 #define CPU_V20
 //#define CPU_286
-//#define CPU_386
 
 #if defined(CPU_8086)
 	#define CPU_CLEAR_ZF_ON_MUL
