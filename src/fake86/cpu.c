@@ -1,6 +1,6 @@
 /*
   Fake86: A portable, open-source 8086 PC emulator.
-  Copyright (C)2010-2012 Mike Chambers
+  Copyright (C)2010-2013 Mike Chambers
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -1212,6 +1212,9 @@ void intcall86 (uint8_t intnum) {
 	switch (intnum) {
 			case 0x10:
 				updatedscreen = 1;
+				/*if (regs.byteregs[regah]!=0x0E) {
+					printf("Int 10h AX = %04X\n", regs.wordregs[regax]);
+				}*/
 				if ( (regs.byteregs[regah]==0x00) || (regs.byteregs[regah]==0x10) ) {
 						oldregax = regs.wordregs[regax];
 						vidinterrupt();
@@ -1225,6 +1228,17 @@ void intcall86 (uint8_t intnum) {
 						return;
 					}
 				lastint10ax = regs.wordregs[regax];
+				if (regs.byteregs[regah]==0x1B) {
+						regs.byteregs[regal] = 0x1B;
+						segregs[reges] = 0xC800;
+						regs.wordregs[regdi] = 0x0000;
+						writew86(0xC8000, 0x0000);
+						writew86(0xC8002, 0xC900);
+						write86(0xC9000, 0x00);
+						write86(0xC9001, 0x00);
+						write86(0xC9002, 0x01);
+						return;
+					}
 				break;
 
 #ifndef DISK_CONTROLLER_ATA
@@ -1298,7 +1312,7 @@ void exec86 (uint32_t execloops) {
 
 	for (loopcount = 0; loopcount < execloops; loopcount++) {
 
-			if ( (totalexec & 31) == 0) timing();
+			if ( (totalexec & TIMING_INTERVAL) == 0) timing();
 
 			if (trap_toggle) {
 					intcall86 (1);

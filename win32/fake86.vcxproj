@@ -28,7 +28,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -265,6 +265,7 @@
     <ClCompile Include="..\src\fake86\speaker.c" />
     <ClCompile Include="..\src\fake86\timing.c" />
     <ClCompile Include="..\src\fake86\video.c" />
+    <ClCompile Include="..\src\fake86\win32\menus.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\fake86\audio.h" />
@@ -278,6 +279,10 @@
     <ClInclude Include="..\src\fake86\modregrm.h" />
     <ClInclude Include="..\src\fake86\mutex.h" />
     <ClInclude Include="..\src\fake86\sermouse.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="fake86.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -24,6 +24,7 @@ install:
 	cp data/asciivga.dat $(DATAPATH)
 	cp data/pcxtbios.bin $(DATAPATH)
 	cp data/videorom.bin $(DATAPATH)
+	cp -p data/rombasic.bin $(DATAPATH)
 	chmod a+x $(BINPATH)/fake86
 	chmod a+x $(BINPATH)/imagegen
 

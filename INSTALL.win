@@ -31,11 +31,3 @@ compile, the final Fake86.exe and Imagegen.exe files will be in
 "fake86-version\win32\bin\". You will also need the files in "data\"
 as well as "SDL.dll" to be in the same folder as "Fake86.exe" for
 it to run properly.
-
-Navigate to that folder in a command prompt window. You should
-then be able to run the software.
-
-Usage note:
-Just a reminder, Fake86 needs to be invoked via command line
-and requires some parameters to work. Run "fake86 -h" to get
-a listing of valid arguments.

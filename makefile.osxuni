@@ -25,6 +25,7 @@ install:
 	cp -p data/asciivga.dat $(DATAPATH)
 	cp -p data/pcxtbios.bin $(DATAPATH)
 	cp -p data/videorom.bin $(DATAPATH)
+	cp -p data/rombasic.bin $(DATAPATH)
 
 clean:
 	rm -f src/fake86/*.o

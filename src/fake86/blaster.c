@@ -1,6 +1,6 @@
 /*
   Fake86: A portable, open-source 8086 PC emulator.
-  Copyright (C)2010-2012 Mike Chambers
+  Copyright (C)2010-2013 Mike Chambers
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -52,6 +52,7 @@ void setsampleticks() {
 }
 
 void cmdBlaster (uint8_t value) {
+	uint8_t recognized = 1;
 	if (blaster.waitforarg) {
 			switch (blaster.lastcmdval) {
 					case 0x10: //direct 8-bit sample output
@@ -106,9 +107,11 @@ void cmdBlaster (uint8_t value) {
 						bufNewData (value);
 						blaster.lasttestval = value;
 						break;
+					default:
+						recognized = 0;
 				}
-			blaster.waitforarg = 0;
-			return;
+			//blaster.waitforarg--; // = 0;
+			if (recognized) return;
 		}
 
 	switch (value) {
@@ -226,7 +229,7 @@ uint8_t inBlaster (uint16_t portnum) {
 	static uint16_t lastread = 0;
 #endif
 #ifdef DEBUG_BLASTER
-	if (lastread != portnum) printf ("[DEBUG] inBlaster: port %Xh, value ", portnum);
+	//if (lastread != portnum) printf ("[DEBUG] inBlaster: port %Xh, value ", portnum);
 #endif
 	portnum &= 0xF;
 	switch (portnum) {
@@ -259,8 +262,8 @@ uint8_t inBlaster (uint16_t portnum) {
 				ret = 0x00;
 		}
 #ifdef DEBUG_BLASTER
-	if (lastread != portnum) printf ("%02X\n", ret);
-	lastread = portnum;
+	//if (lastread != portnum) printf ("%02X\n", ret);
+	//lastread = portnum;
 #endif
 	return (ret);
 }

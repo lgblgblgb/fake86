@@ -1,7 +1,7 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-#define BUILD_STRING "Fake86 v0.13.8.23"
+#define BUILD_STRING "Fake86 v0.13.9.13"
 
 //be sure to only define ONE of the CPU_* options at any given time, or
 //you will likely get some unexpected/bad results!
@@ -28,6 +28,7 @@
 	#define CPU_SET_HIGH_FLAGS
 #endif
 
+#define TIMING_INTERVAL 31
 
 //when USE_PREFETCH_QUEUE is defined, Fake86's CPU emulator uses a 6-byte
 //read-ahead cache for opcode fetches just as a real 8086/8088 does.

@@ -1,6 +1,6 @@
 /*
   Fake86: A portable, open-source 8086 PC emulator.
-  Copyright (C)2010-2012 Mike Chambers
+  Copyright (C)2010-2013 Mike Chambers
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -82,6 +82,11 @@ void savepic() {
 }
 
 int8_t samps[2400];
+
+uint8_t audiobufferfilled() {
+	if (audbufptr >= usebuffersize) return(1);
+	return(0);
+}
 
 void tickaudio() {
 	int16_t sample;

@@ -1,6 +1,6 @@
 /*
   Fake86: A portable, open-source 8086 PC emulator.
-  Copyright (C)2010-2012 Mike Chambers
+  Copyright (C)2010-2013 Mike Chambers
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -40,6 +40,24 @@ uint16_t constantw = 0, constanth = 0;
 uint8_t slowsystem = 0;
 
 extern uint8_t insertdisk (uint8_t drivenum, char *filename);
+extern uint32_t loadrom (uint32_t addr32, uint8_t *filename, uint8_t failure_fatal);
+
+uint32_t hextouint(char *src) {
+	uint32_t tempuint = 0, cc;
+	uint16_t i;
+
+	for (i=0; i<strlen(src); i++) {
+		cc = src[i];
+		if (cc == 0) break;
+		if ((cc >= 'a') && (cc <= 'F')) cc = cc - 'a' + 10;
+			else if ((cc >= 'A') && (cc <= 'F')) cc =  cc - 'A' + 10;
+			else if ((cc >= '0') && (cc <= '9')) cc = cc - '0';
+			else return(0);
+		tempuint <<= 4;
+		tempuint |= cc;
+	}
+	return(tempuint);
+}
 
 void showhelp () {
 	printf ("Fake86 requires some command line parameters to run.\nValid options:\n");
@@ -81,6 +99,9 @@ void showhelp () {
 	printf ("  -latency #       Change audio buffering and output latency. (default: 100 ms)\n");
 	printf ("  -samprate #      Change audio emulation sample rate. (default: 48000 Hz)\n");
 	printf ("  -console         Enable console on stdio during emulation.\n");
+	printf ("  -oprom addr rom  Inject a custom option ROM binary at an address in hex.\n");
+	printf ("                   Example: -oprom F4000 monitor.bin\n");
+	printf ("                            This loads the data from monitor.bin at 0xF4000.\n");
 
 	printf ("\nThis program is free software; you can redistribute it and/or\n");
 	printf ("modify it under the terms of the GNU General Public License\n");
@@ -96,11 +117,14 @@ void showhelp () {
 }
 
 void parsecl (int argc, char *argv[]) {
+	uint32_t tempuint;
 	int i, abort = 0;
 
 	if (argc<2) {
-            printf ("Invoke Fake86 with the parameter -h for help and usage information.\n");
+			printf ("Invoke Fake86 with the parameter -h for help and usage information.\n");
+#ifndef _WIN32
 			exit (0);
+#endif
 		}
 
 	bootdrive = 254;
@@ -170,6 +194,10 @@ void parsecl (int argc, char *argv[]) {
 					i++;
 					constanth = (uint16_t) atoi (argv[i]);
 				}
+			else if (strcmpi (argv[i], "-speed") ==0) {
+					i++;
+					speed= (uint32_t) atol (argv[i]);
+				}
 			else if (strcmpi (argv[i], "-noscale") ==0) noscale = 1;
 			else if (strcmpi (argv[i], "-verbose") ==0) verbose = 1;
 			else if (strcmpi (argv[i], "-smooth") ==0) nosmooth = 0;
@@ -179,6 +207,11 @@ void parsecl (int argc, char *argv[]) {
 			else if (strcmpi (argv[i], "-delay") ==0) framedelay = atol (argv[++i]);
 			else if (strcmpi (argv[i], "-console") ==0) useconsole = 1;
 			else if (strcmpi (argv[i], "-slowsys") ==0) slowsystem = 1;
+			else if (strcmpi (argv[i], "-oprom") ==0) {
+					i++;
+					tempuint = hextouint (argv[i++]);
+					loadrom (tempuint, argv[i], 0);
+				}
 			else {
 					printf ("Unrecognized parameter: %s\n", argv[i]);
 					exit (1);
@@ -187,7 +220,8 @@ void parsecl (int argc, char *argv[]) {
 
 	if (bootdrive==254) {
 			if (disk[0x80].inserted) bootdrive = 0x80;
-			else bootdrive = 0;
+				else if (disk[0x00].inserted) bootdrive = 0;
+				else bootdrive = 0xFF; //ROM BASIC fallback
 		}
 }
 

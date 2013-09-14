@@ -1,6 +1,6 @@
 /*
   Fake86: A portable, open-source 8086 PC emulator.
-  Copyright (C)2010-2012 Mike Chambers
+  Copyright (C)2010-2013 Mike Chambers
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -32,6 +32,7 @@
 #ifdef _WIN32
 CRITICAL_SECTION screenmutex;
 #else
+#include <X11/Xlib.h>
 pthread_t consolethread;
 #endif
 
@@ -119,6 +120,8 @@ extern uint8_t bootdrive, ethif, net_enabled;
 extern void doirq (uint8_t irqnum);
 //extern void isa_ne2000_init(int baseport, uint8_t irq);
 extern void parsecl (int argc, char *argv[]);
+void timing();
+void tickaudio();
 void inittiming();
 void initaudio();
 void init8253();
@@ -183,7 +186,7 @@ void inithardware() {
 	printf ("  - Adlib FM music card: ");
 	initadlib (0x388);
 	printf ("OK\n");
-	printf ("  - Creative Labs Sound Blaster Pro: ");
+	printf ("  - Creative Labs Sound Blaster 2.0: ");
 	initBlaster (0x220, 7);
 	printf ("OK\n");
 	printf ("  - Serial mouse (Microsoft compatible): ");
@@ -192,6 +195,38 @@ void inithardware() {
 	if (doaudio) initaudio();
 	inittiming();
 	initscreen ( (uint8_t *) build);
+}
+
+uint8_t dohardreset = 0;
+uint8_t audiobufferfilled();
+
+#ifdef _WIN32
+void initmenus();
+void EmuThread (void *dummy) {
+#else
+pthread_t emuthread;
+void *EmuThread (void *dummy) {
+#endif
+	while (running) {
+			if (!speed) exec86 (10000);
+			else {
+				exec86(speed / 100);
+				while (!audiobufferfilled()) {
+					timing();
+					tickaudio();
+				}
+#ifdef _WIN32
+				Sleep(10);
+#else
+				usleep(10000);
+#endif
+			}
+			if (scrmodechange) doscrmodechange();
+			if (dohardreset) {
+				reset86();
+				dohardreset = 0;
+			}
+		}
 }
 
 #ifdef _WIN32
@@ -223,12 +258,15 @@ int main (int argc, char *argv[]) {
 	reset86();
 	printf ("OK!\n");
 
+#ifndef _WIN32
+	XInitThreads();
+#endif
 	inithardware();
 
 #ifdef _WIN32
+	initmenus();
 	InitializeCriticalSection (&screenmutex);
 #endif
-
 	if (useconsole) {
 #ifdef _WIN32
 			_beginthread (runconsole, 0, NULL);
@@ -237,16 +275,24 @@ int main (int argc, char *argv[]) {
 #endif
 		}
 
+#ifdef _WIN32
+			_beginthread (EmuThread, 0, NULL);
+#else
+			pthread_create (&emuthread, NULL, (void *) EmuThread, NULL);
+#endif
+
 	lasttick = starttick = SDL_GetTicks();
 	while (running) {
-			exec86 (10000);
-	//printf("exec86 done\n");
 			handleinput();
-			if (scrmodechange) doscrmodechange();
 #ifdef NETWORKING_ENABLED
 			if (ethif < 254) dispatch();
 #endif
-		}
+#ifdef _WIN32
+			Sleep(1);
+#else
+			usleep(1000);
+#endif
+	}
 	endtick = (SDL_GetTicks() - starttick) / 1000;
 	if (endtick == 0) endtick = 1; //avoid divide-by-zero exception in the code below, if ran for less than 1 second
 

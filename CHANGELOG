@@ -1,4 +1,17 @@
-Fake86 changelog for v0.12.9.19
+Fake86 changelog for v0.13.9.13
+
+v0.13.9.13:
+  - Major fix: Some games using the Sound Blaster used to go silent and some
+    even would hang after playing the first sample chunk. It was due to them
+    being unable to read the data count register from the DMA controller.
+    This has been fixed. One example game that did this was Return to Zork.
+
+  - Numerous big fixes and improvements.
+
+  - Windows version now has a simple drop-down menu GUI, so on that platform
+    it is no longer required to specify command-line options for the basics
+    such as specifying disk images. These can be loaded from the menus.
+
 
 v0.12.9.19:
   - Fixed bug from v0.12.9.16 where the call to createscalemap() in the

@@ -1,6 +1,6 @@
 /*
   Fake86: A portable, open-source 8086 PC emulator.
-  Copyright (C)2010-2012 Mike Chambers
+  Copyright (C)2010-2013 Mike Chambers
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -152,10 +152,18 @@ void *VideoThread (void *dummy) {
 		}
 }
 
+#ifdef _WIN32
+void ShowMenu();
+void HideMenu();
+#endif
+
 void doscrmodechange() {
 	MutexLock (screenmutex);
 	if (scrmodechange) {
 			if (screen != NULL) SDL_FreeSurface (screen);
+#ifdef _WIN32
+			if (usefullscreen) HideMenu(); else ShowMenu();
+#endif
 			if (constantw && constanth) screen = SDL_SetVideoMode (constantw, constanth, 32, SDL_HWSURFACE | usefullscreen);
 			else if (noscale) screen = SDL_SetVideoMode (nw, nh, 32, SDL_HWSURFACE | usefullscreen);
 			else {
@@ -523,10 +531,12 @@ void draw () {
 					}
 				if (VGA_SC[4] & 6) planemode = 1;
 				else planemode = 0;
-				vgapage = ( (uint32_t) VGA_CRTC[0xC]<<8) + (uint32_t) VGA_CRTC[0xD];
+				//vgapage = ( (uint32_t) VGA_CRTC[0xC]<<8) + (uint32_t) VGA_CRTC[0xD];
+				vgapage = (( (uint32_t) VGA_CRTC[0xC]<<8) + (uint32_t) VGA_CRTC[0xD]) << 2;
 				for (y=0; y<nh; y++)
 					for (x=0; x<nw; x++) {
-							if (!planemode) color = palettevga[RAM[videobase + y*nw + x]];
+							if (!planemode) color = palettevga[RAM[videobase + ((vgapage + y*nw + x) & 0xFFFF) ]];
+							//if (!planemode) color = palettevga[RAM[videobase + y*nw + x]];
 							else {
 									vidptr = y*nw + x;
 									vidptr = vidptr/4 + (x & 3) *0x10000;
