@@ -32,7 +32,9 @@
 #ifdef _WIN32
 CRITICAL_SECTION screenmutex;
 #else
+#ifndef __APPLE__
 #include <X11/Xlib.h>
+#endif
 pthread_t consolethread;
 #endif
 
@@ -259,7 +261,9 @@ int main (int argc, char *argv[]) {
 	printf ("OK!\n");
 
 #ifndef _WIN32
+#ifndef __APPLE__
 	XInitThreads();
+#endif
 #endif
 	inithardware();
 

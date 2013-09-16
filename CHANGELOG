@@ -1,5 +1,13 @@
 Fake86 changelog for v0.13.9.13
 
+v0.13.9.16:
+  - Fixed regression that caused Fake86 to not compile on at least some
+    versions of Mac OS X.
+
+  - Increased amount of processing time dedicated to timing and audio
+    sample generation. Helps accuracy and helps prevent audio dropouts
+	on slower systems.
+
 v0.13.9.13:
   - Major fix: Some games using the Sound Blaster used to go silent and some
     even would hang after playing the first sample chunk. It was due to them
