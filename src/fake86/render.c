@@ -531,8 +531,7 @@ void draw () {
 					}
 				if (VGA_SC[4] & 6) planemode = 1;
 				else planemode = 0;
-				//vgapage = ( (uint32_t) VGA_CRTC[0xC]<<8) + (uint32_t) VGA_CRTC[0xD];
-				vgapage = (( (uint32_t) VGA_CRTC[0xC]<<8) + (uint32_t) VGA_CRTC[0xD]) << 2;
+				vgapage = ( (uint32_t) VGA_CRTC[0xC]<<8) + (uint32_t) VGA_CRTC[0xD];
 				for (y=0; y<nh; y++)
 					for (x=0; x<nw; x++) {
 							if (!planemode) color = palettevga[RAM[videobase + ((vgapage + y*nw + x) & 0xFFFF) ]];
