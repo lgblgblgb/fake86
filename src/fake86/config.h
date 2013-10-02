@@ -1,7 +1,7 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-#define BUILD_STRING "Fake86 v0.13.9.16"
+#define BUILD_STRING "Fake86 v0.13.10.2"
 
 //be sure to only define ONE of the CPU_* options at any given time, or
 //you will likely get some unexpected/bad results!
