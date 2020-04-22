@@ -3,7 +3,7 @@ BINPATH=/usr/bin
 DATAPATH=/usr/share/fake86
 CFLAGS=-O2 -DPATH_DATAFILES=\"$(DATAPATH)/\"
 INCLUDE=-Isrc/fake86
-LIBS=-lpthread
+LIBS=-lpthread -lX11
 SDLFLAGS=`sdl-config --cflags --libs`
 
 all: fake86-src imagegen-src
