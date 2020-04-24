@@ -20,9 +20,9 @@
 /* audio.c: functions to mix the audio channels, and handle SDL's audio interface. */
 
 #include "config.h"
-#include <SDL/SDL.h>
+#include <SDL.h>
 #ifdef _WIN32
-#include <Windows.h>
+#include <windows.h>
 #include <process.h>
 #else
 #include <pthread.h>

@@ -18,7 +18,7 @@
 */
 
 #ifdef _WIN32
-    #include <Windows.h>
+    #include <windows.h>
     #include <process.h>
     #define MutexLock(mutex) EnterCriticalSection(&mutex)
     #define MutexUnlock(mutex) LeaveCriticalSection(&mutex)

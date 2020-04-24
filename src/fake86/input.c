@@ -20,7 +20,7 @@
 /* input.c: functions for translation of SDL scancodes to BIOS scancodes,
    and handling of SDL events in general. */
 
-#include <SDL/SDL.h>
+#include <SDL.h>
 #include <stdint.h>
 #include "sermouse.h"
 

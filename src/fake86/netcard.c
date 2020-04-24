@@ -33,7 +33,7 @@
 
 extern uint8_t verbose;
 extern union _bytewordregs_ regs;
-extern uint8_t	RAM[0x100000], readonly[0x100000], ethif;
+extern uint8_t	RAM[0x100000], ethif;
 extern uint16_t	segregs[4];
 extern void sendpkt (uint8_t *src, uint16_t len);
 

@@ -24,6 +24,6 @@ jobs:
     - name: Compiling for native (Linux)
       run: sudo -u lgb make -j 2
     - name: Show result
-      run: ls -l bin/
+      run: ls -l bin/ ; ldd bin/fake86 || true
     - name: Showing output of an emulator
       run: bin/fake86 -h || true

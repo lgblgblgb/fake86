@@ -20,7 +20,7 @@
 /* parsecl.c: Fake86 command line parsing for runtime options. */
 
 #include "config.h"
-#include <SDL/SDL.h>
+#include <SDL.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

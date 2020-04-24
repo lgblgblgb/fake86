@@ -21,7 +21,7 @@
    it is a bit messy. i plan to rework much of this in the future. i am also
    going to add hardware accelerated scaling soon. */
 
-#include <SDL/SDL.h>
+#include <SDL.h>
 #include <stdint.h>
 #include <stdio.h>
 #include "mutex.h"

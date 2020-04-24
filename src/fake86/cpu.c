@@ -135,71 +135,47 @@ static void writew86 (uint32_t addr32, uint16_t value) {
 
 uint8_t read86 (uint32_t addr32) {
 	addr32 &= 0xFFFFF;
-	if ( (addr32 >= 0xA0000) && (addr32 <= 0xBFFFF) ) {
-			if ( (vidmode == 0xD) || (vidmode == 0xE) || (vidmode == 0x10) || (vidmode == 0x12) ) return (readVGA (addr32 - 0xA0000) );
-			if ( (vidmode != 0x13) && (vidmode != 0x12) && (vidmode != 0xD) ) return (RAM[addr32]);
-			if ( (VGA_SC[4] & 6) == 0)
-				return (RAM[addr32]);
-			else
-				return (readVGA (addr32 - 0xA0000) );
-		}
-
+	if ((addr32 >= 0xA0000) && (addr32 <= 0xBFFFF)) {
+		if ((vidmode == 0xD) || (vidmode == 0xE) || (vidmode == 0x10) || (vidmode == 0x12))
+			return readVGA(addr32 - 0xA0000);
+		if ((vidmode != 0x13) && (vidmode != 0x12) && (vidmode != 0xD))
+			return RAM[addr32];
+		if ((VGA_SC[4] & 6) == 0)
+			return RAM[addr32];
+		else
+			return readVGA(addr32 - 0xA0000);
+	}
 	if (!didbootstrap) {
-			RAM[0x410] = 0x41; //ugly hack to make BIOS always believe we have an EGA/VGA card installed
-			RAM[0x475] = hdcount; //the BIOS doesn't have any concept of hard drives, so here's another hack
-		}
-
-	return (RAM[addr32]);
+		RAM[0x410] = 0x41; //ugly hack to make BIOS always believe we have an EGA/VGA card installed
+		RAM[0x475] = hdcount; //the BIOS doesn't have any concept of hard drives, so here's another hack
+	}
+	return RAM[addr32];
 }
 
 static uint16_t readw86 (uint32_t addr32) {
-	return ( (uint16_t) read86 (addr32) | (uint16_t) (read86 (addr32 + 1) << 8) );
+	return (uint16_t)read86(addr32) | (uint16_t)(read86(addr32 + 1) << 8);
 }
 
 static inline void flag_szp8 (uint8_t value) {
-	if (!value) {
-			zf = 1;
-		}
-	else {
-			zf = 0;	/* set or clear zero flag */
-		}
-
-	if (value & 0x80) {
-			sf = 1;
-		}
-	else {
-			sf = 0;	/* set or clear sign flag */
-		}
-
-	pf = parity[value]; /* retrieve parity state from lookup table */
+	zf = value ? 0 : 1;
+	sf = value >> 7;
+	pf = parity[value];
 }
 
 static inline void flag_szp16 (uint16_t value) {
-	if (!value) {
-			zf = 1;
-		}
-	else {
-			zf = 0;	/* set or clear zero flag */
-		}
-
-	if (value & 0x8000) {
-			sf = 1;
-		}
-	else {
-			sf = 0;	/* set or clear sign flag */
-		}
-
-	pf = parity[value & 255];	/* retrieve parity state from lookup table */
+	zf = value ? 0 : 1;
+	sf = value >> 15;
+	pf = parity[value & 255];
 }
 
 static inline void flag_log8 (uint8_t value) {
-	flag_szp8 (value);
+	flag_szp8(value);
 	cf = 0;
 	of = 0; /* bitwise logic ops always clear carry and overflow */
 }
 
 static inline void flag_log16 (uint16_t value) {
-	flag_szp16 (value);
+	flag_szp16(value);
 	cf = 0;
 	of = 0; /* bitwise logic ops always clear carry and overflow */
 }

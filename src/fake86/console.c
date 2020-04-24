@@ -20,7 +20,7 @@
 /* console.c: functions for a simple interactive console on stdio. */
 
 #include "config.h"
-#include <SDL/SDL.h>
+#include <SDL.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>

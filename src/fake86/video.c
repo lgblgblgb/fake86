@@ -21,7 +21,7 @@
    a lot of this code is inefficient, and just plain ugly. i plan to rework
    large sections of it soon. */
 
-#include <SDL/SDL.h>
+#include <SDL.h>
 #include <stdint.h>
 #include <stdio.h>
 #include "mutex.h"
@@ -33,7 +33,7 @@ extern void set_port_read_redirector (uint16_t startport, uint16_t endport, void
 extern SDL_Surface *screen;
 extern uint8_t verbose;
 extern union _bytewordregs_ regs;
-extern uint8_t RAM[0x100000], readonly[0x100000];
+extern uint8_t RAM[0x100000];
 extern uint8_t portram[0x10000];
 extern uint16_t segregs[4];
 

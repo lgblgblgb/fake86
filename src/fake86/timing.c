@@ -21,11 +21,11 @@
    system timer interrupt, and to generate new audio output samples. */
 
 #include "config.h"
-#include <SDL/SDL.h>
+#include <SDL.h>
 #include <stdint.h>
 #include <stdio.h>
 #ifdef _WIN32
-#include <Windows.h>
+#include <windows.h>
 LARGE_INTEGER queryperf;
 #else
 #include <sys/time.h>

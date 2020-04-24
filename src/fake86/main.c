@@ -22,7 +22,7 @@
 
 #include "config.h"
 #ifdef __APPLE__      /* Memory leaks occur in OS X when the SDL window gets */
-#include <SDL/SDL.h>  /* resized if SDL.h not included in file with main() */
+#include <SDL.h>      /* resized if SDL.h not included in file with main() */
 #endif
 #include <stdint.h>
 #include <stdio.h>
@@ -154,17 +154,19 @@ extern void dispatch(void);
 
 void printbinary (uint8_t value) {
 	int8_t curbit;
-
 	for (curbit=7; curbit>=0; curbit--) {
-			if ( (value >> curbit) & 1) printf ("1");
-			else printf ("0");
-		}
+		if ((value >> curbit) & 1)
+			printf ("1");
+		else
+			printf ("0");
+	}
 }
 
 uint8_t usessource = 0;
 void inithardware(void) {
 #ifdef NETWORKING_ENABLED
-	if (ethif != 254) initpcap();
+	if (ethif != 254)
+		initpcap();
 #endif
 	printf ("Initializing emulated hardware:\n");
 	memset (port_write_callback, 0, sizeof (port_write_callback) );
@@ -259,13 +261,16 @@ int main (int argc, char *argv[]) {
 
 	memset (readonly, 0, 0x100000);
 	biossize = loadbios (biosfile);
-	if (!biossize) return (-1);
+	if (!biossize)
+		return -1;
 #ifdef DISK_CONTROLLER_ATA
-	if (!loadrom (0xD0000UL, PATH_DATAFILES "ide_xt.bin", 1) ) return (-1);
+	if (!loadrom(0xD0000UL, PATH_DATAFILES "ide_xt.bin", 1))
+		return -1;
 #endif
 	if (biossize <= 8192) {
 		loadrom (0xF6000UL, PATH_DATAFILES "rombasic.bin", 0);
-		if (!loadrom (0xC0000UL, PATH_DATAFILES "videorom.bin", 1) ) return (-1);
+		if (!loadrom(0xC0000UL, PATH_DATAFILES "videorom.bin", 1))
+			return -1;
 	}
 	printf ("\nInitializing CPU... ");
 	running = 1;
@@ -285,49 +290,52 @@ int main (int argc, char *argv[]) {
 #endif
 	if (useconsole) {
 #ifdef _WIN32
-			_beginthread (runconsole, 0, NULL);
+		_beginthread (runconsole, 0, NULL);
 #else
-			pthread_create (&consolethread, NULL, (void *) runconsole, NULL);
+		pthread_create (&consolethread, NULL, (void *) runconsole, NULL);
 #endif
-		}
+	}
 
 #ifdef _WIN32
-			_beginthread (EmuThread, 0, NULL);
+		_beginthread (EmuThread, 0, NULL);
 #else
-			pthread_create (&emuthread, NULL, (void *) EmuThread, NULL);
+		pthread_create (&emuthread, NULL, (void *) EmuThread, NULL);
 #endif
 
 	lasttick = starttick = SDL_GetTicks();
 	while (running) {
-			handleinput();
+		handleinput();
 #ifdef NETWORKING_ENABLED
-			if (ethif < 254) dispatch();
+		if (ethif < 254)
+			dispatch();
 #endif
 #ifdef _WIN32
-			Sleep(1);
+		Sleep(1);
 #else
-			usleep(1000);
+		usleep(1000);
 #endif
 	}
 	endtick = (SDL_GetTicks() - starttick) / 1000;
-	if (endtick == 0) endtick = 1; //avoid divide-by-zero exception in the code below, if ran for less than 1 second
+	if (endtick == 0)
+		endtick = 1; //avoid divide-by-zero exception in the code below, if ran for less than 1 second
 
 	killaudio();
 
 	if (renderbenchmark) {
-			printf ("\n%llu frames rendered in %llu seconds.\n", (long long unsigned int)totalframes, (long long unsigned int)endtick);
-			printf ("Average framerate: %llu FPS.\n", (long long unsigned int)(totalframes / endtick));
-		}
+		printf("\n%llu frames rendered in %llu seconds.\n", (long long unsigned int)totalframes, (long long unsigned int)endtick);
+		printf("Average framerate: %llu FPS.\n", (long long unsigned int)(totalframes / endtick));
+	}
 
-	printf ("\n%llu instructions executed in %llu seconds.\n", (long long unsigned int)totalexec, (long long unsigned int)endtick);
-	printf ("Average speed: %llu instructions/second.\n", (long long unsigned int)(totalexec / endtick));
+	printf("\n%llu instructions executed in %llu seconds.\n", (long long unsigned int)totalexec, (long long unsigned int)endtick);
+	printf("Average speed: %llu instructions/second.\n", (long long unsigned int)(totalexec / endtick));
 
 #ifdef CPU_ADDR_MODE_CACHE
-	printf ("\n  Cached modregrm data access count: %llu\n", cached_access_count);
-	printf ("Uncached modregrm data access count: %llu\n", uncached_access_count);
+	printf("\n  Cached modregrm data access count: %llu\n", cached_access_count);
+	printf("Uncached modregrm data access count: %llu\n", uncached_access_count);
 #endif
 
-	if (useconsole)	exit (0); //makes sure console thread quits even if blocking
+	if (useconsole)
+		exit(0); //makes sure console thread quits even if blocking
 
-	return (0);
+	return 0;
 }
