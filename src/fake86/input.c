@@ -31,7 +31,8 @@ extern void doirq (uint8_t irqnum);
 extern uint8_t running, portram[0x10000];
 extern SDL_Surface *screen;
 
-uint8_t translatescancode (uint16_t keyval) {
+uint8_t translatescancode ( uint16_t keyval )
+{
 	switch (keyval) {
 			case 0x1B:
 				return (1);
@@ -269,26 +270,28 @@ uint8_t translatescancode (uint16_t keyval) {
 uint8_t buttons = 0;
 extern void sermouseevent (uint8_t buttons, int8_t xrel, int8_t yrel);
 extern struct sermouse_s sermouse;
-extern void setwindowtitle (uint8_t *extra);
+extern void setwindowtitle (const char *extra);
 
-void mousegrabtoggle() {
+void mousegrabtoggle ( void )
+{
 	if (usegrabmode == SDL_GRAB_ON) {
-			usegrabmode = SDL_GRAB_OFF;
-			SDL_WM_GrabInput (SDL_GRAB_OFF);
-			SDL_ShowCursor (SDL_ENABLE);
-			setwindowtitle ("");
-		}
-	else {
-			usegrabmode = SDL_GRAB_ON;
-			SDL_WM_GrabInput (SDL_GRAB_ON);
-			SDL_ShowCursor (SDL_DISABLE);
-			setwindowtitle (" (press Ctrl + Alt to release mouse)");
-		}
+		usegrabmode = SDL_GRAB_OFF;
+		SDL_WM_GrabInput(SDL_GRAB_OFF);
+		SDL_ShowCursor(SDL_ENABLE);
+		setwindowtitle("");
+	} else {
+		usegrabmode = SDL_GRAB_ON;
+		SDL_WM_GrabInput(SDL_GRAB_ON);
+		SDL_ShowCursor(SDL_DISABLE);
+		setwindowtitle(" (press Ctrl + Alt to release mouse)");
+	}
 }
 
 extern uint8_t scrmodechange;
 extern uint32_t usefullscreen;
-void handleinput() {
+
+void handleinput ( void )
+{
 	SDL_Event event;
 	int mx = 0, my = 0;
 	uint8_t tempbuttons;

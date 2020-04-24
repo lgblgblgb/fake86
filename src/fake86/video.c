@@ -64,7 +64,7 @@ uint32_t rgb(uint32_t r, uint32_t g, uint32_t b) {
 }
 
 extern uint32_t nw, nh;
-void vidinterrupt() {
+void vidinterrupt(void) {
 	uint32_t tempcalc, memloc, n;
 	updatedscreen = 1;
 	switch (regs.byteregs[regah]) { //what video interrupt function?
@@ -250,15 +250,19 @@ void vidinterrupt() {
 		}
 }
 
-void initcga() {
-	FILE *fontfile;
-	fontfile = fopen (PATH_DATAFILES "asciivga.dat", "rb");
-	if (fontfile==NULL) {
-			printf ("FATAL: Cannot open " PATH_DATAFILES "asciivga!\n");
-			exit (1);
-		}
-	fread (&fontcga[0], 32768, 1, fontfile);
+void initcga( void )
+{
+	FILE *fontfile = fopen(PATH_DATAFILES "asciivga.dat", "rb");
+	if (fontfile == NULL) {
+		fprintf(stderr, "FATAL: Cannot open " PATH_DATAFILES "asciivga!\n");
+		exit(1);
+	}
+	int ret = fread (&fontcga[0], 32768, 1, fontfile);
 	fclose (fontfile);
+	if (ret != 1) {
+		fprintf(stderr, "DATAL: Cannot read file " PATH_DATAFILES "asciivga!\n");
+		exit(1);
+	}
 
 	palettecga[0] = 0;
 	palettecga[1] = rgb (0, 0, 0xAA);
@@ -835,7 +839,7 @@ uint8_t readVGA (uint32_t addr32) {
 	return (0); //this won't be reached, but without it some compilers give a warning
 }
 
-void initVideoPorts() {
+void initVideoPorts(void) {
 	set_port_write_redirector (0x3B0, 0x3DA, &outVGA);
 	set_port_read_redirector (0x3B0, 0x3DA, &inVGA);
 }

@@ -52,28 +52,31 @@ uint32_t framedelay = 20;
 uint8_t scrmodechange = 0, noscale = 0, nosmooth = 1, renderbenchmark = 0, doaudio = 1;
 char windowtitle[128];
 
-void initcga();
+void initcga(void);
 #ifdef _WIN32
 void VideoThread (void *dummy);
 #else
 void *VideoThread (void *dummy);
 #endif
 
-void setwindowtitle (uint8_t *extra) {
-	char temptext[128];
+//void setwindowtitle (uint8_t *extra) {
+void setwindowtitle (const char *extra) {
+	char temptext[256];
 	sprintf (temptext, "%s%s", windowtitle, extra);
 	SDL_WM_SetCaption ( (const char *) temptext, NULL);
 }
 
-uint8_t initscreen (uint8_t *ver) {
+uint8_t initscreen (const char *ver) {
 	if (doaudio) {
-			if (SDL_Init (SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER) ) return (0);
-		}
-	else {
-			if (SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER) ) return (0);
-		}
+		if (SDL_Init (SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER) )
+			return 0;
+	} else {
+		if (SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER) )
+			return 0;
+	}
 	screen = SDL_SetVideoMode (640, 400, 32, SDL_HWSURFACE);
-	if (screen == NULL) return (0);
+	if (screen == NULL)
+		return 0;
 	sprintf (windowtitle, "%s", ver);
 	setwindowtitle ("");
 	initcga();
@@ -84,12 +87,12 @@ uint8_t initscreen (uint8_t *ver) {
 	pthread_create (&vidthread, NULL, (void *) VideoThread, NULL);
 #endif
 
-	return (1);
+	return 1;
 }
 
 uint32_t prestretch[1024][1024];
 uint32_t nw, nh; //native width and height, pre-stretching (i.e. 320x200 for mode 13h)
-void createscalemap() {
+void createscalemap(void) {
 	uint32_t srcx, srcy, dstx, dsty, scalemapptr;
 	double xscale, yscale;
 
@@ -98,9 +101,9 @@ void createscalemap() {
 	if (scalemap != NULL) free(scalemap);
 	scalemap = (void *)malloc( ((uint32_t)screen->w + 1) * (uint32_t)screen->h * 4);
 	if (scalemap == NULL) {
-			printf("\nFATAL: Unable to allocate memory for scalemap!\n");
-			exit(1);
-		}
+		fprintf(stderr, "\nFATAL: Unable to allocate memory for scalemap!\n");
+		exit(1);
+	}
 	scalemapptr = 0;
 	for (dsty=0; dsty<(uint32_t)screen->h; dsty++) {
 			srcy = (uint32_t) ( (double) dsty * yscale);
@@ -115,8 +118,8 @@ void createscalemap() {
 }
 
 extern uint16_t oldw, oldh, constantw, constanth;
-void draw();
-extern void handleinput();
+void draw(void);
+extern void handleinput(void);
 #ifdef _WIN32
 void VideoThread (void *dummy) {
 #else
@@ -127,37 +130,41 @@ void *VideoThread (void *dummy) {
 	cursorvisible = 0;
 
 	while (running) {
-			cursorcurtick = SDL_GetTicks();
-			if ( (cursorcurtick - cursorprevtick) >= 250) {
-					updatedscreen = 1;
-					cursorvisible = ~cursorvisible & 1;
-					cursorprevtick = cursorcurtick;
-				}
-
-			if (updatedscreen || renderbenchmark) {
-					updatedscreen = 0;
-					if (screen != NULL) {
-							MutexLock (screenmutex);
-							if (regenscalemap) createscalemap();
-							draw();
-							MutexUnlock (screenmutex);
-						}
-					totalframes++;
-				}
-			if (!renderbenchmark) {
-					delaycalc = framedelay - (SDL_GetTicks() - cursorcurtick);
-					if (delaycalc > framedelay) delaycalc = framedelay;
-					SDL_Delay (delaycalc);
-				}
+		cursorcurtick = SDL_GetTicks();
+		if ( (cursorcurtick - cursorprevtick) >= 250) {
+			updatedscreen = 1;
+			cursorvisible = ~cursorvisible & 1;
+			cursorprevtick = cursorcurtick;
 		}
+		if (updatedscreen || renderbenchmark) {
+			updatedscreen = 0;
+			if (screen != NULL) {
+				MutexLock (screenmutex);
+				if (regenscalemap)
+					createscalemap();
+				draw();
+				MutexUnlock(screenmutex);
+			}
+			totalframes++;
+		}
+		if (!renderbenchmark) {
+			delaycalc = framedelay - (SDL_GetTicks() - cursorcurtick);
+			if (delaycalc > framedelay)
+				delaycalc = framedelay;
+			SDL_Delay(delaycalc);
+		}
+	}
+#ifndef _WIN32
+	return NULL;
+#endif
 }
 
 #ifdef _WIN32
-void ShowMenu();
-void HideMenu();
+void ShowMenu(void);
+void HideMenu(void);
 #endif
 
-void doscrmodechange() {
+void doscrmodechange(void) {
 	MutexLock (screenmutex);
 	if (scrmodechange) {
 			if (screen != NULL) SDL_FreeSurface (screen);
@@ -298,7 +305,7 @@ void roughblit (SDL_Surface *target) {
 */
 void doubleblit (SDL_Surface *target) {
 	uint32_t srcx, srcy, dstx, dsty, curcolor;
-	int32_t ofs, startofs;
+	int32_t ofs; //, startofs;
 	uint8_t *pixelrgb;
 
 	if (SDL_MUSTLOCK (target) )
@@ -307,7 +314,8 @@ void doubleblit (SDL_Surface *target) {
 
 	for (dsty=0; dsty<(uint32_t)target->h; dsty += 2) {
 			srcy = (uint32_t) (dsty >> 1);
-			startofs = ofs = dsty*target->w;
+			//startofs = ofs = dsty*target->w;
+			ofs = dsty*target->w;
 			for (dstx=0; dstx<(uint32_t)target->w; dstx += 2) {
 					srcx = (uint32_t) (dstx >> 1);
 					pixelrgb = (uint8_t *) &prestretch[srcy][srcx];
@@ -325,7 +333,7 @@ void doubleblit (SDL_Surface *target) {
 }
 
 extern uint16_t vtotal;
-void draw () {
+void draw (void) {
 	uint32_t planemode, vgapage, color, chary, charx, vidptr, divx, divy, curchar, curpixel, usepal, intensity, blockw, curheight, x1, y1;
 	switch (vidmode) {
 			case 0:

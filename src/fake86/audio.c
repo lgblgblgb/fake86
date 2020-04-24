@@ -43,13 +43,21 @@ int32_t audbufptr, usebuffersize, usesamplerate = AUDIO_DEFAULT_SAMPLE_RATE, lat
 uint8_t speakerenabled = 0;
 
 extern uint64_t gensamplerate, sampleticks, hostfreq;
-extern int16_t adlibgensample();
-extern int16_t speakergensample();
-extern int16_t getssourcebyte();
-extern int16_t getBlasterSample();
+extern int16_t adlibgensample(void);
+extern int16_t speakergensample(void);
+extern int16_t getssourcebyte(void);
+extern int16_t getBlasterSample(void);
 extern uint8_t usessource;
 
-void create_output_wav (uint8_t *filename) {
+
+static inline void putmemstr ( uint8_t *dest, const char *str )
+{
+	while (*str) {
+		*dest++ = *str++;
+	}
+}
+
+void create_output_wav (const char *filename) {
 	printf ("Creating %s for audio logging... ", filename);
 	wav_file = fopen (filename, "wb");
 	if (wav_file == NULL) {
@@ -62,33 +70,37 @@ void create_output_wav (uint8_t *filename) {
 	wav_hdr.bitsPerSample = 8;
 	wav_hdr.blockAlign = 1;
 	wav_hdr.ChunkSize = sizeof (wav_hdr) - 4;
-	sprintf (&wav_hdr.WAVE[0], "WAVE");
-	sprintf (&wav_hdr.fmt[0], "fmt ");
+	//sprintf ((char*)&wav_hdr.WAVE[0], "WAVE");
+	putmemstr(wav_hdr.WAVE, "WAVE");
+	//sprintf ((char*)&wav_hdr.fmt[0], "fmt ");
+	putmemstr(wav_hdr.fmt, "fmt ");
 	wav_hdr.NumOfChan = 1;
 	wav_hdr.bytesPerSec = usesamplerate * (uint32_t) (wav_hdr.bitsPerSample >> 3) * (uint32_t) wav_hdr.NumOfChan;
-	sprintf (&wav_hdr.RIFF[0], "RIFF");
+	//sprintf ((char*)&wav_hdr.RIFF[0], "RIFF");
+	putmemstr(wav_hdr.RIFF, "RIFF");
 	wav_hdr.Subchunk1Size = 16;
 	wav_hdr.SamplesPerSec = usesamplerate;
-	sprintf (&wav_hdr.Subchunk2ID[0], "data");
+	//sprintf ((char*)&wav_hdr.Subchunk2ID[0], "data");
+	putmemstr(wav_hdr.Subchunk2ID, "data");
 	wav_hdr.Subchunk2Size = 0;
 	//fwrite((void *)&wav_hdr, 1, sizeof(wav_hdr), wav_file);
 }
 
 uint64_t doublesamplecount, cursampnum = 0, sampcount = 0, framecount = 0;
-uint8_t bmpfilename[256];
+char     bmpfilename[256];
 
-void savepic() {
-	SDL_SaveBMP (screen, &bmpfilename[0]);
+void savepic(void) {
+	SDL_SaveBMP (screen, bmpfilename);
 }
 
 int8_t samps[2400];
 
-uint8_t audiobufferfilled() {
+uint8_t audiobufferfilled(void) {
 	if (audbufptr >= usebuffersize) return(1);
 	return(0);
 }
 
-void tickaudio() {
+void tickaudio(void) {
 	int16_t sample;
 	if (audbufptr >= usebuffersize) return;
 	sample = adlibgensample() >> 4;
@@ -99,7 +111,7 @@ void tickaudio() {
 }
 
 extern uint64_t timinginterval;
-extern void inittiming();
+extern void inittiming(void);
 void fill_audio (void *udata, int8_t *stream, int len) {
 	memcpy (stream, audbuf, len);
 	memmove (audbuf, &audbuf[len], usebuffersize - len);
@@ -108,7 +120,7 @@ void fill_audio (void *udata, int8_t *stream, int len) {
 	if (audbufptr < 0) audbufptr = 0;
 }
 
-void initaudio() {
+void initaudio(void) {
 	printf ("Initializing audio stream... ");
 
 	if (usesamplerate < 4000) usesamplerate = 4000;
@@ -131,7 +143,7 @@ void initaudio() {
 			return;
 		}
 	else {
-			printf ("OK! (%lu Hz, %lu ms, %lu sample latency)\n", usesamplerate, latency, usebuffersize);
+			printf ("OK! (%lu Hz, %lu ms, %lu sample latency)\n", (long unsigned int)usesamplerate, (long unsigned int)latency, (long unsigned int)usebuffersize);
 		}
 
 	memset (audbuf, 128, sizeof (audbuf) );
@@ -141,7 +153,7 @@ void initaudio() {
 	return;
 }
 
-void killaudio() {
+void killaudio(void) {
 	SDL_PauseAudio (1);
 
 	if (wav_file == NULL) return;

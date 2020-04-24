@@ -1,6 +1,6 @@
 #include "../config.h"
 #include "../../../win32/resource.h"
-#include <Windows.h>
+#include <windows.h>
 #include <SDL/SDL.h>
 #include <SDL/SDL_syswm.h>
 
@@ -8,20 +8,20 @@ HWND myWindow;
 HINSTANCE myInstance;
 HMENU myMenu;
 WNDPROC oldProc;
-HWND GetHwnd();
+HWND GetHwnd(void);
 HICON myIcon;
-void SetWndProc();
+void SetWndProc(void);
 void MenuItemClick(WPARAM wParam);
 
-void ShowMenu() {
+void ShowMenu(void) {
 	SetMenu(myWindow, myMenu);
 }
 
-void HideMenu() {
+void HideMenu(void) {
 	SetMenu(myWindow, NULL);
 }
 
-void initmenus() {
+void initmenus(void) {
 	myWindow = GetHwnd();
 	myInstance = GetModuleHandle(NULL);
 	myMenu = LoadMenu(NULL, MAKEINTRESOURCE(IDR_MENU1));
@@ -34,7 +34,7 @@ void initmenus() {
 	return;
 }
 
-HWND GetHwnd() {
+HWND GetHwnd(void) {
 	SDL_SysWMinfo wmi;
 	SDL_VERSION(&wmi.version);
 
@@ -52,7 +52,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	return(CallWindowProc(oldProc, hwnd, msg, wParam, lParam));
 }
 
-void SetWndProc() {
+void SetWndProc(void) {
 	oldProc = (WNDPROC)SetWindowLong(myWindow, GWL_WNDPROC, (LONG_PTR)WndProc);
 }
 

@@ -39,11 +39,11 @@ uint8_t idATA[512];
 uint8_t statusreg = 0, errorreg = 0, drivesel = 0, databuf[512];
 uint16_t dataptr = 512;
 
-void bufclear() {
+void bufclear(void) {
 	memset (databuf, 0, 512);
 }
 
-void bufcook() {
+void bufcook(void) {
 	uint16_t i;
 	uint8_t cc;
 	for (i=0; i<512; i+=2) {

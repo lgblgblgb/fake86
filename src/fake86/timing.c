@@ -37,10 +37,10 @@ struct timeval tv;
 extern struct blaster_s blaster;
 extern struct i8253_s i8253;
 extern void doirq (uint8_t irqnum);
-extern void tickaudio();
-extern void tickssource();
-extern void tickadlib();
-extern void tickBlaster();
+extern void tickaudio(void);
+extern void tickssource(void);
+extern void tickadlib(void);
+extern void tickBlaster(void);
 
 uint64_t hostfreq = 1000000, lasttick = 0, curtick = 0, tickgap, i8253tickgap, lasti8253tick, scanlinetiming, lastscanlinetick, curscanline = 0;
 uint64_t sampleticks, lastsampletick, ssourceticks, lastssourcetick, adlibticks, lastadlibtick, lastblastertick, gensamplerate;
@@ -50,7 +50,7 @@ extern uint64_t totalexec;
 extern uint32_t speed;
 extern uint8_t port3da, doaudio, slowsystem;
 
-void inittiming() {
+void inittiming(void) {
 #ifdef _WIN32
 	QueryPerformanceFrequency (&queryperf);
 	hostfreq = queryperf.QuadPart;
@@ -70,7 +70,7 @@ void inittiming() {
 	i8253tickgap = hostfreq / 119318;
 }
 
-void timing() {
+void timing(void) {
 	uint8_t i8253chan;
 
 #ifdef _WIN32

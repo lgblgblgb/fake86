@@ -33,14 +33,15 @@ extern struct struct_drive disk[256];
 #define strcmpi _strcmpi
 #endif
 
-extern uint8_t bootdrive, ethif, verbose, cgaonly, *biosfile, usessource, noscale, nosmooth, renderbenchmark, useconsole, doaudio;
+extern uint8_t bootdrive, ethif, verbose, cgaonly, usessource, noscale, nosmooth, renderbenchmark, useconsole, doaudio;
+extern char *biosfile;
 extern uint32_t framedelay, textbase, usefullscreen, speed;
 extern int32_t usesamplerate, latency;
 uint16_t constantw = 0, constanth = 0;
 uint8_t slowsystem = 0;
 
 extern uint8_t insertdisk (uint8_t drivenum, char *filename);
-extern uint32_t loadrom (uint32_t addr32, uint8_t *filename, uint8_t failure_fatal);
+extern uint32_t loadrom (uint32_t addr32, const char *filename, uint8_t failure_fatal);
 
 uint32_t hextouint(char *src) {
 	uint32_t tempuint = 0, cc;
@@ -59,7 +60,7 @@ uint32_t hextouint(char *src) {
 	return(tempuint);
 }
 
-void showhelp () {
+void showhelp (void) {
 	printf ("Fake86 requires some command line parameters to run.\nValid options:\n");
 
 	printf ("  -fd0 filename    Specify a floppy disk image file to use as floppy 0.\n");
@@ -118,7 +119,7 @@ void showhelp () {
 
 void parsecl (int argc, char *argv[]) {
 	uint32_t tempuint;
-	int i, abort = 0;
+	int i; //, abort = 0;
 
 	if (argc<2) {
 			printf ("Invoke Fake86 with the parameter -h for help and usage information.\n");

@@ -75,11 +75,11 @@ struct addrmodecache_s {
 };
 #endif
 
-#define StepIP(x)	ip += x
-#define getmem8(x, y)	read86(segbase(x) + y)
-#define getmem16(x, y)	readw86(segbase(x) + y)
-#define putmem8(x, y, z)	write86(segbase(x) + y, z)
-#define putmem16(x, y, z)	writew86(segbase(x) + y, z)
+#define StepIP(x)	ip += (x)
+#define getmem8(x, y)	read86(segbase(x) + (y))
+#define getmem16(x, y)	readw86(segbase(x) + (y))
+#define putmem8(x, y, z)	write86(segbase(x) + (y), (z))
+#define putmem16(x, y, z)	writew86(segbase(x) + (y), (z))
 #define signext(value)	(int16_t)(int8_t)(value)
 #define signext32(value)	(int32_t)(int16_t)(value)
 #define getreg16(regid)	regs.wordregs[regid]
@@ -88,7 +88,7 @@ struct addrmodecache_s {
 #define putreg8(regid, writeval)	regs.byteregs[byteregtable[regid]] = writeval
 #define getsegreg(regid)	segregs[regid]
 #define putsegreg(regid, writeval)	segregs[regid] = writeval
-#define segbase(x)	((uint32_t) x << 4)
+#define segbase(x)	((uint32_t)(x) << 4)
 
 #define makeflagsword() \
 	( \

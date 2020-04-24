@@ -49,7 +49,7 @@ uint16_t curhandle = 0;
 char errbuf[PCAP_ERRBUF_SIZE];
 uint8_t maclocal[6] = { 0xDE, 0xAD, 0xBE, 0xEF, 0x13, 0x37 };
 
-void initpcap() {
+void initpcap(void) {
 	int i=0;
 
 	printf ("\nObtaining NIC list via libpcap...\n");
@@ -121,17 +121,17 @@ void initpcap() {
 	net_enabled = 1;
 }
 
-void setmac() {
+void setmac(void) {
 	memcpy (&RAM[0xE0000], &maclocal[0], 6);
 }
 
 #ifndef NETWORKING_OLDCARD
-extern int ne2000_can_receive();
+extern int ne2000_can_receive(void);
 extern void ne2000_receive (const uint8_t *buf, int size);
 
 uint8_t newrecv[5000];
 
-void dispatch() {
+void dispatch(void) {
 	uint16_t i;
 
 	if (pcap_next_ex (adhandle, &hdr, &pktdata) <=0) return;
@@ -163,7 +163,7 @@ extern struct netstruct {
 
 extern void doirq (uint8_t irqnum);
 
-void dispatch() {
+void dispatch(void) {
 	if (pcap_next_ex (adhandle, &hdr, &pktdata) <=0) return;
 	if (hdr->len==0) return;
 

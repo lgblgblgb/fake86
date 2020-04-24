@@ -29,11 +29,11 @@ extern uint8_t portram[0x10000];
 uint8_t ssourcebuf[16], ssourceptr = 0, ssourceactive = 0;
 int16_t ssourcecursample = 0;
 
-int16_t getssourcebyte() {
+int16_t getssourcebyte(void) {
 	return (ssourcecursample);
 }
 
-void tickssource() {
+void tickssource(void) {
 	uint8_t rotatefifo;
 	if ( (ssourceptr==0) || (!ssourceactive) ) {
 			ssourcecursample = 0;
@@ -52,7 +52,7 @@ void putssourcebyte (uint8_t value) {
 	if (ssourceptr==16) portram[0x379] = 0x40;
 }
 
-uint8_t ssourcefull() {
+uint8_t ssourcefull(void) {
 	if (ssourceptr==16) return (0x40);
 	else return (0x00);
 }
@@ -71,10 +71,10 @@ void outsoundsource (uint16_t portnum, uint8_t value) {
 }
 
 uint8_t insoundsource (uint16_t portnum) {
-	return (ssourcefull() );
+	return ssourcefull();
 }
 
-void initsoundsource() {
+void initsoundsource(void) {
 	set_port_write_redirector (0x378, 0x378, &outsoundsource);
 	set_port_write_redirector (0x37A, 0x37A, &outsoundsource);
 	set_port_read_redirector (0x379, 0x379, &insoundsource);

@@ -1,40 +1,36 @@
-SRCFILES=src/fake86/*.c
-BINPATH=/usr/bin
-DATAPATH=/usr/share/fake86
-CFLAGS=-O2 -DPATH_DATAFILES=\"$(DATAPATH)/\"
-INCLUDE=-Isrc/fake86
-LIBS=-lpthread -lX11
-SDLFLAGS=`sdl-config --cflags --libs`
+CC		= gcc
+SRCFILES	= src/fake86/*.c
+HEADERS		= src/fake86/*.h
+BINPATH		= /usr/local/bin
+DATAPATH	= /usr/local/share/fake86
+CFLAGS		= -std=c11 -O3 -Wall -pipe -DPATH_DATAFILES=\"$(DATAPATH)/\"
+INCLUDE		= -Isrc/fake86
+LIBS		= -lpthread -lX11
+SDLFLAGS	= `sdl-config --cflags --libs`
+BIN_FAKE86	= bin/fake86
+BIN_IMAGEGEN	= bin/fake86-imagegen
+BINS		= $(BIN_FAKE86) $(BIN_IMAGEGEN)
 
-all: fake86-src imagegen-src
+all: $(BINS)
 
-fake86-src:
-	$(CC) $(SRCFILES) -o bin/fake86 $(CFLAGS) $(INCLUDE) $(LIBS) $(SDLFLAGS)
-	chmod a+x bin/fake86
+$(BIN_FAKE86): $(SRCFILES) $(HEADERS)
+	$(CC) $(SRCFILES) -o $@ $(CFLAGS) $(INCLUDE) $(LIBS) $(SDLFLAGS)
 
-imagegen-src:
-	$(CC) src/imagegen/imagegen.c -o bin/imagegen $(CFLAGS)
-	chmod a+x bin/imagegen
+$(BIN_IMAGEGEN): src/imagegen/imagegen.c
+	$(CC) $< -o $@ $(CFLAGS)
 
-install:
-	mkdir -p $(BINPATH)
-	mkdir -p $(DATAPATH)
-	chmod a-x data/*
-	cp -p bin/fake86 $(BINPATH)
-	cp -p bin/imagegen $(BINPATH)
-	cp -p data/asciivga.dat $(DATAPATH)
-	cp -p data/pcxtbios.bin $(DATAPATH)
-	cp -p data/videorom.bin $(DATAPATH)
-	cp -p data/rombasic.bin $(DATAPATH)
+test: $(BIN_FAKE86)
+	$< -fd0 $(DATAPATH)/boot-floppy.img -boot 0
+
+install: $(BINS)
+	mkdir -p $(BINPATH) $(DATAPATH)
+	cp $(BINS) $(BINPATH)/
+	cp data/asciivga.dat data/pcxtbios.bin data/videorom.bin data/rombasic.bin $(DATAPATH)/
 
 clean:
-	rm -f src/fake86/*.o
-	rm -f src/fake86/*~
-	rm -f src/imagegen/*.o
-	rm -f src/imagegen/*~
-	rm -f bin/fake86
-	rm -f bin/imagegen
+	rm -f src/fake86/*.o src/imagegen/*.o $(BINS)
 
 uninstall:
-	rm -f $(BINPATH)/fake86
-	rm -f $(BINPATH)/imagegen
+	rm -f $(BINPATH)/fake86 $(BINPATH)/imagegen
+
+.PHONY: all test install clean clean uninstall

@@ -43,7 +43,7 @@ void bufNewData (uint8_t value) {
 }
 
 extern uint64_t hostfreq;
-void setsampleticks() {
+void setsampleticks(void) {
 	if (blaster.samplerate == 0) {
 			blaster.sampleticks = 0;
 			return;
@@ -269,7 +269,7 @@ uint8_t inBlaster (uint16_t portnum) {
 }
 
 //FILE *sbout = NULL;
-void tickBlaster() {
+void tickBlaster(void) {
 	if (!blaster.usingdma) return;
 	/*if (blaster.paused8) {
 	blaster.sample = 128;
@@ -293,12 +293,12 @@ void tickBlaster() {
 		}
 }
 
-int16_t getBlasterSample() {
+int16_t getBlasterSample(void) {
 	if (blaster.speakerstate == 0) return (0);
 	else return ( (int16_t) blaster.sample - 128);
 }
 
-void mixerReset() {
+void mixerReset(void) {
 	memset (blaster.mixer.reg, 0, sizeof (blaster.mixer.reg) );
 	blaster.mixer.reg[0x22] = blaster.mixer.reg[0x26] = blaster.mixer.reg[0x04] = (4 << 5) | (4 << 1);
 }

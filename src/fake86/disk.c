@@ -116,7 +116,7 @@ void writedisk (uint8_t drivenum, uint16_t dstseg, uint16_t dstoff, uint16_t cyl
 	regs.byteregs[regah] = 0;
 }
 
-void diskhandler() {
+void diskhandler(void) {
 	static uint8_t lastdiskah[256], lastdiskcf[256];
 	switch (regs.byteregs[regah]) {
 			case 0: //reset disk system

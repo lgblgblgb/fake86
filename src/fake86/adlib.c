@@ -207,7 +207,7 @@ int32_t adlibsample (uint8_t curchan) {
 	return (tempsample);
 }
 
-int16_t adlibgensample() {
+int16_t adlibgensample(void) {
 	uint8_t curchan;
 	int16_t adlibaccum;
 	adlibaccum = 0;
@@ -219,7 +219,7 @@ int16_t adlibgensample() {
 	return (adlibaccum);
 }
 
-void tickadlib() {
+void tickadlib(void) {
 	uint8_t curchan;
 	for (curchan=0; curchan<9; curchan++) {
 			if (adlibfreq (curchan) !=0) {

@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
 
 	for(i = 0; i < size; i++) {
 		fwrite(&blank[0], 1048576, 1, image);
-		printf("\rWriting to file: %u MB", i);
+		printf("\rWriting to file: %lu MB", i);
 	}
 
 	printf(" complete.\n");

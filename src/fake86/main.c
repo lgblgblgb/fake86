@@ -32,23 +32,24 @@
 #ifdef _WIN32
 CRITICAL_SECTION screenmutex;
 #else
+#include <unistd.h>
 #ifndef __APPLE__
 #include <X11/Xlib.h>
 #endif
 pthread_t consolethread;
 #endif
 
-const uint8_t *build = BUILD_STRING;
+const char *build = BUILD_STRING;
 
 extern uint8_t RAM[0x100000], readonly[0x100000];
 extern uint8_t running, renderbenchmark;
 
-extern void reset86();
+extern void reset86(void);
 extern void exec86 (uint32_t execloops);
-extern uint8_t initscreen (uint8_t *ver);
-extern void VideoThread();
-extern doscrmodechange();
-extern void handleinput();
+extern uint8_t initscreen (const char *ver);
+extern void VideoThread(void);
+extern void doscrmodechange(void);
+extern void handleinput(void);
 
 #ifdef CPU_ADDR_MODE_CACHE
 extern uint64_t cached_access_count, uncached_access_count;
@@ -58,92 +59,97 @@ extern uint8_t scrmodechange, doaudio;
 extern uint64_t totalexec, totalframes;
 uint64_t starttick, endtick, lasttick;
 
-uint8_t *biosfile = NULL, verbose = 0, cgaonly = 0, useconsole = 0;
+uint8_t verbose = 0, cgaonly = 0, useconsole = 0;
+char *biosfile = NULL;
 uint32_t speed = 0;
 
 
-uint32_t loadbinary (uint32_t addr32, uint8_t *filename, uint8_t roflag) {
+uint32_t loadbinary (uint32_t addr32, const char *filename, uint8_t roflag) {
 	FILE *binfile = NULL;
 	uint32_t readsize;
 
 	binfile = fopen (filename, "rb");
 	if (binfile == NULL) {
-			return (0);
-		}
+		return (0);
+	}
 
 	fseek (binfile, 0, SEEK_END);
 	readsize = ftell (binfile);
 	fseek (binfile, 0, SEEK_SET);
-	fread ( (void *) &RAM[addr32], 1, readsize, binfile);
+	int ret = fread ( (void *) &RAM[addr32], 1, readsize, binfile);
 	fclose (binfile);
+	if (ret != readsize)
+		return 0;
 
 	memset ( (void *) &readonly[addr32], roflag, readsize);
 	return (readsize);
 }
 
-uint32_t loadrom (uint32_t addr32, uint8_t *filename, uint8_t failure_fatal) {
+uint32_t loadrom (uint32_t addr32, const char *filename, uint8_t failure_fatal) {
 	uint32_t readsize;
-	readsize = loadbinary (addr32, filename, 1);
+	readsize = loadbinary(addr32, filename, 1);
 	if (!readsize) {
-			if (failure_fatal) printf("FATAL: ");
-			else printf("WARNING: ");
-			printf ("Unable to load %s\n", filename);
-			return (0);
-		}
-	else {
-			printf ("Loaded %s at 0x%05X (%lu KB)\n", filename, addr32, readsize >> 10);
-			return (readsize);
-		}
+		if(failure_fatal)
+			fprintf(stderr, "FATAL: Unable to load %s\n", filename);
+		else
+			printf("WARNING: Unable to load %s\n", filename);
+		return 0;
+	} else {
+		printf("Loaded %s at 0x%05X (%lu KB)\n", filename, addr32, (long unsigned int)(readsize >> 10));
+		return readsize;
+	}
 }
 
-uint32_t loadbios (uint8_t *filename) {
+uint32_t loadbios (const char *filename) {
 	FILE *binfile = NULL;
 	uint32_t readsize;
 
-	binfile = fopen (filename, "rb");
+	binfile = fopen(filename, "rb");
 	if (binfile == NULL) {
-			return (0);
-		}
+		return 0;
+	}
 
-	fseek (binfile, 0, SEEK_END);
-	readsize = ftell (binfile);
-	fseek (binfile, 0, SEEK_SET);
-	fread ( (void *) &RAM[0x100000 - readsize], 1, readsize, binfile);
-	fclose (binfile);
+	fseek(binfile, 0, SEEK_END);
+	readsize = ftell(binfile);
+	fseek(binfile, 0, SEEK_SET);
+	int ret = fread((void*)&RAM[0x100000 - readsize], 1, readsize, binfile);
+	fclose(binfile);
+	if (ret != readsize)
+		return 0;
 
-	memset ( (void *) &readonly[0x100000 - readsize], 1, readsize);
-	return (readsize);
+	memset((void*)&readonly[0x100000 - readsize], 1, readsize);
+	return readsize;
 }
 
-extern uint32_t SDL_GetTicks();
+extern uint32_t SDL_GetTicks(void);
 extern uint8_t insertdisk (uint8_t drivenum, char *filename);
 extern void ejectdisk (uint8_t drivenum);
 extern uint8_t bootdrive, ethif, net_enabled;
 extern void doirq (uint8_t irqnum);
 //extern void isa_ne2000_init(int baseport, uint8_t irq);
 extern void parsecl (int argc, char *argv[]);
-void timing();
-void tickaudio();
-void inittiming();
-void initaudio();
-void init8253();
-void init8259();
-extern void init8237();
-extern void initVideoPorts();
-extern void killaudio();
+void timing(void);
+void tickaudio(void);
+void inittiming(void);
+void initaudio(void);
+void init8253(void);
+void init8259(void);
+extern void init8237(void);
+extern void initVideoPorts(void);
+extern void killaudio(void);
 extern void initsermouse (uint16_t baseport, uint8_t irq);
 extern void *port_write_callback[0x10000];
 extern void *port_read_callback[0x10000];
 extern void *port_write_callback16[0x10000];
 extern void *port_read_callback16[0x10000];
 extern void initadlib (uint16_t baseport);
-extern void initsoundsource();
+extern void initsoundsource(void);
 extern void isa_ne2000_init (uint16_t baseport, uint8_t irq);
 extern void initBlaster (uint16_t baseport, uint8_t irq);
 
 #ifdef NETWORKING_ENABLED
-extern void initpcap();
-extern void dispatch();
+extern void initpcap(void);
+extern void dispatch(void);
 #endif
 
 void printbinary (uint8_t value) {
@@ -156,7 +162,7 @@ void printbinary (uint8_t value) {
 }
 
 uint8_t usessource = 0;
-void inithardware() {
+void inithardware(void) {
 #ifdef NETWORKING_ENABLED
 	if (ethif != 254) initpcap();
 #endif
@@ -176,10 +182,10 @@ void inithardware() {
 	printf ("OK\n");
 	initVideoPorts();
 	if (usessource) {
-			printf ("  - Disney Sound Source: ");
-			initsoundsource();
-			printf ("OK\n");
-		}
+		printf ("  - Disney Sound Source: ");
+		initsoundsource();
+		printf ("OK\n");
+	}
 #ifndef NETWORKING_OLDCARD
 	printf ("  - Novell NE2000 ethernet adapter: ");
 	isa_ne2000_init (0x300, 6);
@@ -194,41 +200,47 @@ void inithardware() {
 	printf ("  - Serial mouse (Microsoft compatible): ");
 	initsermouse (0x3F8, 4);
 	printf ("OK\n");
-	if (doaudio) initaudio();
+	if (doaudio)
+		initaudio();
 	inittiming();
-	initscreen ( (uint8_t *) build);
+	initscreen(build);
 }
 
 uint8_t dohardreset = 0;
-uint8_t audiobufferfilled();
+uint8_t audiobufferfilled(void);
 
 #ifdef _WIN32
-void initmenus();
+void initmenus(void);
 void EmuThread (void *dummy) {
 #else
 pthread_t emuthread;
 void *EmuThread (void *dummy) {
 #endif
 	while (running) {
-			if (!speed) exec86 (10000);
-			else {
-				exec86(speed / 100);
-				while (!audiobufferfilled()) {
-					timing();
-					tickaudio();
-				}
+		if (!speed)
+			exec86(10000);
+		else {
+			exec86(speed / 100);
+			while (!audiobufferfilled()) {
+				timing();
+				tickaudio();
+			}
 #ifdef _WIN32
-				Sleep(10);
+			Sleep(10);
 #else
-				usleep(10000);
+			usleep(10000);
 #endif
-			}
-			if (scrmodechange) doscrmodechange();
-			if (dohardreset) {
-				reset86();
-				dohardreset = 0;
-			}
 		}
+		if (scrmodechange)
+			doscrmodechange();
+		if (dohardreset) {
+			reset86();
+			dohardreset = 0;
+		}
+	}
+#ifndef _WIN32
+	return NULL;
+#endif
 }
 
 #ifdef _WIN32
@@ -303,12 +315,12 @@ int main (int argc, char *argv[]) {
 	killaudio();
 
 	if (renderbenchmark) {
-			printf ("\n%llu frames rendered in %llu seconds.\n", totalframes, endtick);
-			printf ("Average framerate: %llu FPS.\n", totalframes / endtick);
+			printf ("\n%llu frames rendered in %llu seconds.\n", (long long unsigned int)totalframes, (long long unsigned int)endtick);
+			printf ("Average framerate: %llu FPS.\n", (long long unsigned int)(totalframes / endtick));
 		}
 
-	printf ("\n%llu instructions executed in %llu seconds.\n", totalexec, endtick);
-	printf ("Average speed: %llu instructions/second.\n", totalexec / endtick);
+	printf ("\n%llu instructions executed in %llu seconds.\n", (long long unsigned int)totalexec, (long long unsigned int)endtick);
+	printf ("Average speed: %llu instructions/second.\n", (long long unsigned int)(totalexec / endtick));
 
 #ifdef CPU_ADDR_MODE_CACHE
 	printf ("\n  Cached modregrm data access count: %llu\n", cached_access_count);

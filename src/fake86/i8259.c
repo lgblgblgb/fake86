@@ -75,7 +75,7 @@ void out8259(uint16_t portnum, uint8_t value) {
 	 }
 }
 
-uint8_t nextintr() {
+uint8_t nextintr(void) {
 	uint8_t i, tmpirr;
 	tmpirr = i8259.irr & (~i8259.imr); //XOR request register with inverted mask register
 	for (i=0; i<8; i++)
@@ -92,7 +92,7 @@ void doirq(uint8_t irqnum) {
 	 if (irqnum == 1) keyboardwaitack = 1;
 }
 
-void init8259() {
+void init8259(void) {
 	 memset((void *)&i8259, 0, sizeof(i8259));
 	 set_port_write_redirector(0x20, 0x21, &out8259);
 	 set_port_read_redirector(0x20, 0x21, &in8259);

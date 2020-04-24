@@ -122,7 +122,7 @@ uint8_t in8237 (uint16_t addr) {
 	return (0);
 }
 
-void init8237() {
+void init8237(void) {
 	memset (dmachan, 0, sizeof (dmachan) );
 
 	set_port_write_redirector (0x00, 0x0F, &out8237);

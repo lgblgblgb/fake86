@@ -68,7 +68,7 @@ uint8_t	ethif;
 extern uint8_t	vidmode;
 extern uint8_t verbose;
 
-extern void vidinterrupt();
+extern void vidinterrupt(void);
 
 extern uint8_t readVGA (uint32_t addr32);
 
@@ -128,7 +128,7 @@ void write86 (uint32_t addr32, uint8_t value) {
 		}
 }
 
-void writew86 (uint32_t addr32, uint16_t value) {
+static void writew86 (uint32_t addr32, uint16_t value) {
 	write86 (addr32, (uint8_t) value);
 	write86 (addr32 + 1, (uint8_t) (value >> 8) );
 }
@@ -152,11 +152,11 @@ uint8_t read86 (uint32_t addr32) {
 	return (RAM[addr32]);
 }
 
-uint16_t readw86 (uint32_t addr32) {
+static uint16_t readw86 (uint32_t addr32) {
 	return ( (uint16_t) read86 (addr32) | (uint16_t) (read86 (addr32 + 1) << 8) );
 }
 
-void flag_szp8 (uint8_t value) {
+static inline void flag_szp8 (uint8_t value) {
 	if (!value) {
 			zf = 1;
 		}
@@ -174,7 +174,7 @@ void flag_szp8 (uint8_t value) {
 	pf = parity[value]; /* retrieve parity state from lookup table */
 }
 
-void flag_szp16 (uint16_t value) {
+static inline void flag_szp16 (uint16_t value) {
 	if (!value) {
 			zf = 1;
 		}
@@ -192,19 +192,19 @@ void flag_szp16 (uint16_t value) {
 	pf = parity[value & 255];	/* retrieve parity state from lookup table */
 }
 
-void flag_log8 (uint8_t value) {
+static inline void flag_log8 (uint8_t value) {
 	flag_szp8 (value);
 	cf = 0;
 	of = 0; /* bitwise logic ops always clear carry and overflow */
 }
 
-void flag_log16 (uint16_t value) {
+static inline void flag_log16 (uint16_t value) {
 	flag_szp16 (value);
 	cf = 0;
 	of = 0; /* bitwise logic ops always clear carry and overflow */
 }
 
-void flag_adc8 (uint8_t v1, uint8_t v2, uint8_t v3) {
+static void flag_adc8 (uint8_t v1, uint8_t v2, uint8_t v3) {
 
 	/* v1 = destination operand, v2 = source operand, v3 = carry flag */
 	uint16_t	dst;
@@ -233,7 +233,7 @@ void flag_adc8 (uint8_t v1, uint8_t v2, uint8_t v3) {
 		}
 }
 
-void flag_adc16 (uint16_t v1, uint16_t v2, uint16_t v3) {
+static void flag_adc16 (uint16_t v1, uint16_t v2, uint16_t v3) {
 
 	uint32_t	dst;
 
@@ -261,7 +261,7 @@ void flag_adc16 (uint16_t v1, uint16_t v2, uint16_t v3) {
 		}
 }
 
-void flag_add8 (uint8_t v1, uint8_t v2) {
+static void flag_add8 (uint8_t v1, uint8_t v2) {
 	/* v1 = destination operand, v2 = source operand */
 	uint16_t	dst;
 
@@ -289,7 +289,7 @@ void flag_add8 (uint8_t v1, uint8_t v2) {
 		}
 }
 
-void flag_add16 (uint16_t v1, uint16_t v2) {
+static void flag_add16 (uint16_t v1, uint16_t v2) {
 	/* v1 = destination operand, v2 = source operand */
 	uint32_t	dst;
 
@@ -317,7 +317,7 @@ void flag_add16 (uint16_t v1, uint16_t v2) {
 		}
 }
 
-void flag_sbb8 (uint8_t v1, uint8_t v2, uint8_t v3) {
+static void flag_sbb8 (uint8_t v1, uint8_t v2, uint8_t v3) {
 
 	/* v1 = destination operand, v2 = source operand, v3 = carry flag */
 	uint16_t	dst;
@@ -347,7 +347,7 @@ void flag_sbb8 (uint8_t v1, uint8_t v2, uint8_t v3) {
 		}
 }
 
-void flag_sbb16 (uint16_t v1, uint16_t v2, uint16_t v3) {
+static void flag_sbb16 (uint16_t v1, uint16_t v2, uint16_t v3) {
 
 	/* v1 = destination operand, v2 = source operand, v3 = carry flag */
 	uint32_t	dst;
@@ -377,7 +377,7 @@ void flag_sbb16 (uint16_t v1, uint16_t v2, uint16_t v3) {
 		}
 }
 
-void flag_sub8 (uint8_t v1, uint8_t v2) {
+static void flag_sub8 (uint8_t v1, uint8_t v2) {
 
 	/* v1 = destination operand, v2 = source operand */
 	uint16_t	dst;
@@ -406,7 +406,7 @@ void flag_sub8 (uint8_t v1, uint8_t v2) {
 		}
 }
 
-void flag_sub16 (uint16_t v1, uint16_t v2) {
+static void flag_sub16 (uint16_t v1, uint16_t v2) {
 
 	/* v1 = destination operand, v2 = source operand */
 	uint32_t	dst;
@@ -435,77 +435,77 @@ void flag_sub16 (uint16_t v1, uint16_t v2) {
 		}
 }
 
-void op_adc8() {
+static void op_adc8(void) {
 	res8 = oper1b + oper2b + cf;
 	flag_adc8 (oper1b, oper2b, cf);
 }
 
-void op_adc16() {
+static void op_adc16(void) {
 	res16 = oper1 + oper2 + cf;
 	flag_adc16 (oper1, oper2, cf);
 }
 
-void op_add8() {
+static void op_add8(void) {
 	res8 = oper1b + oper2b;
 	flag_add8 (oper1b, oper2b);
 }
 
-void op_add16() {
+static void op_add16(void) {
 	res16 = oper1 + oper2;
 	flag_add16 (oper1, oper2);
 }
 
-void op_and8() {
+static void op_and8(void) {
 	res8 = oper1b & oper2b;
 	flag_log8 (res8);
 }
 
-void op_and16() {
+static void op_and16(void) {
 	res16 = oper1 & oper2;
 	flag_log16 (res16);
 }
 
-void op_or8() {
+static void op_or8(void) {
 	res8 = oper1b | oper2b;
 	flag_log8 (res8);
 }
 
-void op_or16() {
+static void op_or16(void) {
 	res16 = oper1 | oper2;
 	flag_log16 (res16);
 }
 
-void op_xor8() {
+static void op_xor8(void) {
 	res8 = oper1b ^ oper2b;
 	flag_log8 (res8);
 }
 
-void op_xor16() {
+static void op_xor16(void) {
 	res16 = oper1 ^ oper2;
 	flag_log16 (res16);
 }
 
-void op_sub8() {
+static void op_sub8(void) {
 	res8 = oper1b - oper2b;
 	flag_sub8 (oper1b, oper2b);
 }
 
-void op_sub16() {
+static void op_sub16(void) {
 	res16 = oper1 - oper2;
 	flag_sub16 (oper1, oper2);
 }
 
-void op_sbb8() {
+static void op_sbb8(void) {
 	res8 = oper1b - (oper2b + cf);
 	flag_sbb8 (oper1b, oper2b, cf);
 }
 
-void op_sbb16() {
+static void op_sbb16(void) {
 	res16 = oper1 - (oper2 + cf);
 	flag_sbb16 (oper1, oper2, cf);
 }
 
-void getea (uint8_t rmval) {
+static void getea (uint8_t rmval) {
 	uint32_t	tempea;
 
 	tempea = 0;
@@ -573,12 +573,12 @@ void getea (uint8_t rmval) {
 	ea = (tempea & 0xFFFF) + (useseg << 4);
 }
 
-void push (uint16_t pushval) {
+static void push (uint16_t pushval) {
 	regs.wordregs[regsp] = regs.wordregs[regsp] - 2;
 	putmem16 (segregs[regss], regs.wordregs[regsp], pushval);
 }
 
-uint16_t pop() {
+static uint16_t pop(void) {
 
 	uint16_t	tempval;
 
@@ -587,13 +587,13 @@ uint16_t pop() {
 	return tempval;
 }
 
-void reset86() {
+void reset86(void) {
 	segregs[regcs] = 0xFFFF;
 	ip = 0x0000;
 	hltstate = 0;
 }
 
-uint16_t readrm16 (uint8_t rmval) {
+static uint16_t readrm16 (uint8_t rmval) {
 	if (mode < 3) {
 			getea (rmval);
 			return read86 (ea) | ( (uint16_t) read86 (ea + 1) << 8);
@@ -603,7 +603,7 @@ uint16_t readrm16 (uint8_t rmval) {
 		}
 }
 
-uint8_t readrm8 (uint8_t rmval) {
+static uint8_t readrm8 (uint8_t rmval) {
 	if (mode < 3) {
 			getea (rmval);
 			return read86 (ea);
@@ -613,7 +613,7 @@ uint8_t readrm8 (uint8_t rmval) {
 		}
 }
 
-void writerm16 (uint8_t rmval, uint16_t value) {
+static void writerm16 (uint8_t rmval, uint16_t value) {
 	if (mode < 3) {
 			getea (rmval);
 			write86 (ea, value & 0xFF);
@@ -624,7 +624,7 @@ void writerm16 (uint8_t rmval, uint16_t value) {
 		}
 }
 
-void writerm8 (uint8_t rmval, uint8_t value) {
+static void writerm8 (uint8_t rmval, uint8_t value) {
 	if (mode < 3) {
 			getea (rmval);
 			write86 (ea, value);
@@ -634,7 +634,7 @@ void writerm8 (uint8_t rmval, uint8_t value) {
 		}
 }
 
-uint8_t op_grp2_8 (uint8_t cnt) {
+static uint8_t op_grp2_8 (uint8_t cnt) {
 
 	uint16_t	s;
 	uint16_t	shift;
@@ -762,7 +762,7 @@ uint8_t op_grp2_8 (uint8_t cnt) {
 	return s & 0xFF;
 }
 
-uint16_t op_grp2_16 (uint8_t cnt) {
+static uint16_t op_grp2_16 (uint8_t cnt) {
 
 	uint32_t	s;
 	uint32_t	shift;
@@ -889,7 +889,7 @@ uint16_t op_grp2_16 (uint8_t cnt) {
 	return (uint16_t) s & 0xFFFF;
 }
 
-void op_div8 (uint16_t valdiv, uint8_t divisor) {
+static void op_div8 (uint16_t valdiv, uint8_t divisor) {
 	if (divisor == 0) {
 			intcall86 (0);
 			return;
@@ -904,7 +904,7 @@ void op_div8 (uint16_t valdiv, uint8_t divisor) {
 	regs.byteregs[regal] = valdiv / (uint16_t) divisor;
 }
 
-void op_idiv8 (uint16_t valdiv, uint8_t divisor) {
+static void op_idiv8 (uint16_t valdiv, uint8_t divisor) {
 
 	uint16_t	s1;
 	uint16_t	s2;
@@ -938,7 +938,7 @@ void op_idiv8 (uint16_t valdiv, uint8_t divisor) {
 	regs.byteregs[regal] = (uint8_t) d1;
 }
 
-void op_grp3_8() {
+static void op_grp3_8(void) {
 	oper1 = signext (oper1b);
 	oper2 = signext (oper2b);
 	switch (reg) {
@@ -1017,7 +1017,7 @@ void op_grp3_8() {
 		}
 }
 
-void op_div16 (uint32_t valdiv, uint16_t divisor) {
+static void op_div16 (uint32_t valdiv, uint16_t divisor) {
 	if (divisor == 0) {
 			intcall86 (0);
 			return;
@@ -1032,7 +1032,7 @@ void op_div16 (uint32_t valdiv, uint16_t divisor) {
 	regs.wordregs[regax] = valdiv / (uint32_t) divisor;
 }
 
-void op_idiv16 (uint32_t valdiv, uint16_t divisor) {
+static void op_idiv16 (uint32_t valdiv, uint16_t divisor) {
 
 	uint32_t	d1;
 	uint32_t	d2;
@@ -1067,7 +1067,7 @@ void op_idiv16 (uint32_t valdiv, uint16_t divisor) {
 	regs.wordregs[regdx] = d2;
 }
 
-void op_grp3_16() {
+static void op_grp3_16(void) {
 	switch (reg) {
 			case 0:
 			case 1: /* TEST */
@@ -1145,7 +1145,7 @@ void op_grp3_16() {
 		}
 }
 
-void op_grp5() {
+static void op_grp5(void) {
 	switch (reg) {
 			case 0: /* INC Ev */
 				oper2 = 1;
@@ -1197,9 +1197,9 @@ FILE	*logout;
 uint8_t printops = 0;
 
 #ifdef NETWORKING_ENABLED
-extern void nethandler();
+extern void nethandler(void);
 #endif
-extern void diskhandler();
+extern void diskhandler(void);
 extern void readdisk (uint8_t drivenum, uint16_t dstseg, uint16_t dstoff, uint16_t cyl, uint16_t sect, uint16_t head, uint16_t sectcount);
 
 void intcall86 (uint8_t intnum) {
@@ -1293,8 +1293,8 @@ uint32_t	makeupticks = 0;
 extern float	timercomp;
 uint64_t	timerticks = 0, realticks = 0;
 uint64_t	lastcountertimer = 0, counterticks = 10000;
-extern uint8_t	nextintr();
-extern void	timing();
+extern uint8_t	nextintr(void);
+extern void	timing(void);
 
 #ifdef USE_PREFETCH_QUEUE
 uint8_t prefetch[6];
