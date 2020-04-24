@@ -30,7 +30,7 @@
 extern void set_port_write_redirector (uint16_t startport, uint16_t endport, void *callback);
 extern void set_port_read_redirector (uint16_t startport, uint16_t endport, void *callback);
 
-extern SDL_Surface *screen;
+//extern SDL_Surface *screen;
 extern uint8_t verbose;
 extern union _bytewordregs_ regs;
 extern uint8_t RAM[0x100000];
@@ -48,19 +48,30 @@ uint16_t VGA_SC[0x100], VGA_CRTC[0x100], VGA_ATTR[0x100], VGA_GC[0x100];
 uint32_t videobase= 0xB8000, textbase = 0xB8000, x, y;
 uint8_t fontcga[32768];
 uint32_t palettecga[16], palettevga[256];
-uint32_t usefullscreen = 0, usegrabmode = SDL_GRAB_OFF;
+uint32_t usefullscreen = 0, usegrabmode = 0;
 
 uint8_t latchRGB = 0, latchPal = 0, VGA_latch[4], stateDAC = 0;
 uint8_t latchReadRGB = 0, latchReadPal = 0;
 uint32_t tempRGB;
 uint16_t oldw, oldh; //used when restoring screen mode
 
-uint32_t rgb(uint32_t r, uint32_t g, uint32_t b) {
+extern SDL_PixelFormat *sdl_pixfmt;
+
+static inline uint32_t rgb(uint8_t r, uint8_t g, uint8_t b) {
+#if 0
 #ifdef __BIG_ENDIAN__
 	return ( (r<<24) | (g<<16) | (b<<8) );
 #else
 	return (r | (g<<8) | (b<<16) );
 #endif
+#endif
+	//return SDL_MapRGBA(sdl_pixfmt, r, g, b, 0xFF);
+	return
+		(r    << sdl_pixfmt->Rshift) |
+		(g    << sdl_pixfmt->Gshift) |
+		(b    << sdl_pixfmt->Bshift) |
+		(0xFF << sdl_pixfmt->Ashift)
+	;
 }
 
 extern uint32_t nw, nh;
@@ -205,6 +216,8 @@ void vidinterrupt(void) {
 						memset (&RAM[0xA0000], 0, 0x1FFFF);
 						memset (VRAM, 0, 262144);
 					}
+// TODO: removed ... FIXME
+#if 0
 				switch (vidmode) {
 						case 127: //hercules
 							nw = oldw = 720;
@@ -229,6 +242,7 @@ void vidinterrupt(void) {
 							scrmodechange = 1;
 							break;
 					}
+#endif
 				break;
 			case 0x10: //VGA DAC functions
 				switch (regs.byteregs[regal]) {
@@ -264,7 +278,7 @@ void initcga( void )
 		exit(1);
 	}
 
-	palettecga[0] = 0;
+	palettecga[0] = rgb (0, 0, 0);
 	palettecga[1] = rgb (0, 0, 0xAA);
 	palettecga[2] = rgb (0, 0xAA, 0);
 	palettecga[3] = rgb (0, 0xAA, 0xAA);
@@ -596,6 +610,7 @@ void outVGA (uint16_t portnum, uint8_t value) {
 			case 0x3C9: //RGB data register
 				value = value & 63;
 				switch (latchRGB) {
+#if 0
 #ifdef __BIG_ENDIAN__
 						case 0: //red
 							tempRGB = value << 26;
@@ -621,6 +636,19 @@ void outVGA (uint16_t portnum, uint8_t value) {
 							latchPal = latchPal + 1;
 							break;
 #endif
+#endif
+						case 0: //red
+							tempRGB =  value << (sdl_pixfmt->Rshift + 2);
+							break;
+						case 1: //green
+							tempRGB |= value << (sdl_pixfmt->Gshift + 2);
+							break;
+						case 2: //blue
+							tempRGB |= value << (sdl_pixfmt->Bshift + 2);
+							tempRGB |= 0xFF  <<  sdl_pixfmt->Ashift;
+							palettevga[latchPal] = tempRGB;
+							latchPal = latchPal + 1;
+							break;
 					}
 				latchRGB = (latchRGB + 1) % 3;
 				break;
@@ -657,6 +685,7 @@ uint8_t inVGA (uint16_t portnum) {
 				return (latchReadPal);
 			case 0x3C9: //RGB data register
 				switch (latchReadRGB++) {
+#if 0
 #ifdef __BIG_ENDIAN__
 						case 0: //blue
 							return ( (palettevga[latchReadPal] >> 26) & 63);
@@ -674,6 +703,14 @@ uint8_t inVGA (uint16_t portnum) {
 							latchReadRGB = 0;
 							return ( (palettevga[latchReadPal++] >> 18) & 63);
 #endif
+#endif
+						case 0: //blue
+							return  (palettevga[latchReadPal] >> (sdl_pixfmt->Rshift + 2)) & 63;
+						case 1: //green
+							return  (palettevga[latchReadPal] >> (sdl_pixfmt->Gshift + 2)) & 63;
+						case 2: //red
+							latchReadRGB = 0;
+							return  (palettevga[latchReadPal++] >> (sdl_pixfmt->Bshift + 2)) & 63;
 					}
 			case 0x3DA:
 				return (port3da);

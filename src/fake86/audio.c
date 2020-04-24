@@ -90,7 +90,8 @@ uint64_t doublesamplecount, cursampnum = 0, sampcount = 0, framecount = 0;
 char     bmpfilename[256];
 
 void savepic(void) {
-	SDL_SaveBMP (screen, bmpfilename);
+	// TODO: implement for SDL2
+	//SDL_SaveBMP (screen, bmpfilename);
 }
 
 int8_t samps[2400];

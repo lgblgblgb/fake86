@@ -21,9 +21,9 @@
    load ROM binaries, and kickstart the CPU emulator. */
 
 #include "config.h"
-#ifdef __APPLE__      /* Memory leaks occur in OS X when the SDL window gets */
+//#ifdef __APPLE__      /* Memory leaks occur in OS X when the SDL window gets */
 #include <SDL.h>      /* resized if SDL.h not included in file with main() */
-#endif
+//#endif
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,7 +46,7 @@ extern uint8_t running, renderbenchmark;
 
 extern void reset86(void);
 extern void exec86 (uint32_t execloops);
-extern uint8_t initscreen (const char *ver);
+extern int  initscreen (const char *ver);
 extern void VideoThread(void);
 extern void doscrmodechange(void);
 extern void handleinput(void);
@@ -205,7 +205,10 @@ void inithardware(void) {
 	if (doaudio)
 		initaudio();
 	inittiming();
-	initscreen(build);
+	if (initscreen(build)) {
+		fprintf(stderr, "FATAL: cannot initialize SDL2 level: %s\n", SDL_GetError());
+		exit(1);
+	}
 }
 
 uint8_t dohardreset = 0;
@@ -254,7 +257,7 @@ extern void bufsermousedata (uint8_t value);
 int main (int argc, char *argv[]) {
 	uint32_t biossize;
 
-	printf ("%s (c)2010-2013 Mike Chambers\n", build);
+	printf ("%s (c)2010-2013 Mike Chambers\n  (c)2020 Gabor Lenart LGB (clean-up, SDL2, new features, etc)\n", build);
 	printf ("[A portable, open-source 8086 PC emulator]\n\n");
 
 	parsecl (argc, argv);

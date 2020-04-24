@@ -1,5 +1,12 @@
 Fake86: A portable, open-source 8086 PC emulator.
 Copyright (C)2010-2013 Mike Chambers
+Copyright (C)2020      Gabor Lenart "LGB"
+
+Fake86+: Please note, that this is not the original Fake86.
+It's under heavy refactoring by me (LGB). Currently it's already
+SDL2 instead of SDL. More changes will come ...
+
+===============================================================================
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License

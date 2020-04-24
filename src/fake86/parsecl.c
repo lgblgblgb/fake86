@@ -204,7 +204,7 @@ void parsecl (int argc, char *argv[]) {
 			else if (strcmpi (argv[i], "-smooth") ==0) nosmooth = 0;
 			else if (strcmpi (argv[i], "-fps") ==0) renderbenchmark = 1;
 			else if (strcmpi (argv[i], "-nosound") ==0) doaudio = 0;
-			else if (strcmpi (argv[i], "-fullscreen") ==0) usefullscreen = SDL_FULLSCREEN;
+			else if (strcmpi (argv[i], "-fullscreen") ==0) usefullscreen = 1;
 			else if (strcmpi (argv[i], "-delay") ==0) framedelay = atol (argv[++i]);
 			else if (strcmpi (argv[i], "-console") ==0) useconsole = 1;
 			else if (strcmpi (argv[i], "-slowsys") ==0) slowsystem = 1;

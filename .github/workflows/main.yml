@@ -12,7 +12,7 @@ jobs:
     - name: Update APT database
       run: sudo apt-get -yq update || true
     - name: Install OS packages for building
-      run: sudo apt-get -yq --no-install-suggests --no-install-recommends --force-yes install libsdl1.2-dev build-essential gcc make
+      run: sudo apt-get -yq --no-install-suggests --no-install-recommends --force-yes install libsdl2-dev build-essential gcc make
     - name: List of all installed packages
       run: dpkg -l | cat || true
     - name: Modifying the build system
