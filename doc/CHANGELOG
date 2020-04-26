@@ -2,17 +2,22 @@ Fake86 changelog for v0.20.4.26
 
 v0.20.4.26:
   - Imported repository from the auther by me (LGB), start of refactoring.
-  - Ported to SDL2
+  - Ported to SDL2!!
   - Stretch/smooth etc turned off (can be handled at SDL2 level)
-  - Bit more clever Makefile, though I will prefer not to compile at once later
+  - Bit more clever Makefile, requires GNU Make. Missing: dependency
   - Windows compilation now requires UNIX-like environment and mingw. Sorry,
     but I don't use Windows at all, so this is the way I prefer. Now windows
     version can't have menus, but that may be cured with windres, later.
   - Some source clean-up
   - More exact prototype (added "void"), avoid using gets() and fixed some
     dangeours sprintf can cause buffer overflow
-  - Beginning of rework 'extern' stuffs, now mostly in externs.h, should
-    groupped into the right .h file ...
+  - Put 'extern' stuffs to every corresponding .h file!
+  - Automatic builds with Github Actions
+  - Source structure is reorganized (eg files directly under src/ ...)
+  - Many variables made to 'static'
+  - Unused static variables are commented out for cleaner compile (this
+    can cause problems in future with network support enabled etc, I'll see)
+  - Some general gcc and clang warnings are eliminated with source modifications
 
 ----------------------------------------------------------------------------
 
