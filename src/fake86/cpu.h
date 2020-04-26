@@ -17,6 +17,14 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#ifndef FAKE86_CPU_H_INCLUDED
+#define FAKE86_CPU_H_INCLUDED
+
+#include "config.h"
+#ifdef CPU_ADDR_MODE_CACHE
+extern uint64_t cached_access_count, uncached_access_count;
+#endif
+
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -60,6 +68,8 @@ union _bytewordregs_ {
 	uint16_t wordregs[8];
 	uint8_t byteregs[8];
 };
+
+extern union _bytewordregs_ regs;
 
 #ifdef CPU_ADDR_MODE_CACHE
 struct addrmodecache_s {
@@ -108,3 +118,5 @@ struct addrmodecache_s {
 	df = (temp16 >> 10) & 1; \
 	of = (temp16 >> 11) & 1; \
 	}
+
+#endif

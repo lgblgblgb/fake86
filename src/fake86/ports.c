@@ -25,9 +25,11 @@
 #include <stdio.h>
 #include "cpu.h"
 
-extern uint8_t portram[0x10000];
-extern uint8_t speakerenabled;
-extern uint8_t keyboardwaitack;
+#include "externs.h"
+
+//extern uint8_t portram[0x10000];
+//extern uint8_t speakerenabled;
+//extern uint8_t keyboardwaitack;
 
 void (*do_callback_write) (uint16_t portnum, uint8_t value) = NULL;
 uint8_t (*do_callback_read) (uint16_t portnum) = NULL;
@@ -38,7 +40,7 @@ void * (port_read_callback[0x10000]);
 void * (port_write_callback16[0x10000]);
 void * (port_read_callback16[0x10000]);
 
-extern uint8_t verbose;
+//extern uint8_t verbose;
 void portout (uint16_t portnum, uint8_t value) {
 	portram[portnum] = value;
 	//if (verbose) printf("portout(0x%X, 0x%02X);\n", portnum, value);

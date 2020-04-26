@@ -17,6 +17,9 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#ifndef FAKE86_AUDIO_H_INCLUDED
+#define FAKE86_AUDIO_H_INCLUDED
+
 #include <stdint.h>
 
 struct wav_hdr_s {
@@ -34,3 +37,5 @@ struct wav_hdr_s {
 	uint8_t	Subchunk2ID[4]; /* "data"  string   */
 	uint32_t Subchunk2Size;  /* Sampled data length	*/
 };
+
+#endif

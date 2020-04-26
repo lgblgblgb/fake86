@@ -17,6 +17,11 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#ifndef FAKE86_I8259_H_INCLUDED
+#define FAKE86_I8259_H_INCLUDED
+
+#include <stdint.h>
+
 struct structpic {
 	uint8_t imr; //mask register
 	uint8_t irr; //request register
@@ -29,3 +34,7 @@ struct structpic {
 	uint8_t readmode; //remember what to return on read register from OCW3
 	uint8_t enabled;
 };
+
+extern struct structpic i8259;
+
+#endif

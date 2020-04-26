@@ -33,7 +33,9 @@
 #include "blaster.h"
 #include "audio.h"
 
-extern SDL_Surface *screen;
+#include "externs.h"
+
+//extern SDL_Surface *screen;
 struct wav_hdr_s wav_hdr;
 FILE *wav_file = NULL;
 
@@ -42,12 +44,12 @@ int8_t audbuf[96000];
 int32_t audbufptr, usebuffersize, usesamplerate = AUDIO_DEFAULT_SAMPLE_RATE, latency = AUDIO_DEFAULT_LATENCY;
 uint8_t speakerenabled = 0;
 
-extern uint64_t gensamplerate, sampleticks, hostfreq;
-extern int16_t adlibgensample(void);
-extern int16_t speakergensample(void);
-extern int16_t getssourcebyte(void);
-extern int16_t getBlasterSample(void);
-extern uint8_t usessource;
+//extern uint64_t gensamplerate, sampleticks, hostfreq;
+//extern int16_t adlibgensample(void);
+//extern int16_t speakergensample(void);
+//extern int16_t getssourcebyte(void);
+//extern int16_t getBlasterSample(void);
+//extern uint8_t usessource;
 
 
 static inline void putmemstr ( uint8_t *dest, const char *str )
@@ -111,8 +113,8 @@ void tickaudio(void) {
 	if (audbufptr < sizeof(audbuf) ) audbuf[audbufptr++] = (uint8_t) ((uint16_t) sample+128);
 }
 
-extern uint64_t timinginterval;
-extern void inittiming(void);
+//extern uint64_t timinginterval;
+//extern void inittiming(void);
 void fill_audio (void *udata, int8_t *stream, int len) {
 	memcpy (stream, audbuf, len);
 	memmove (audbuf, &audbuf[len], usebuffersize - len);

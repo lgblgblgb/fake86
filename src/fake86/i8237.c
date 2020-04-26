@@ -27,16 +27,19 @@
 #include "blaster.h"
 #include "i8237.h"
 
-extern struct blaster_s blaster;
+#include "externs.h"
+
+
+//extern struct blaster_s blaster;
 
 struct dmachan_s dmachan[4];
 uint8_t flipflop = 0;
 
-extern void set_port_write_redirector (uint16_t startport, uint16_t endport, void *callback);
-extern void set_port_read_redirector (uint16_t startport, uint16_t endport, void *callback);
-extern uint8_t read86 (uint32_t addr32);
+//extern void set_port_write_redirector (uint16_t startport, uint16_t endport, void *callback);
+//extern void set_port_read_redirector (uint16_t startport, uint16_t endport, void *callback);
+//extern uint8_t read86 (uint32_t addr32);
 
-extern uint8_t RAM[0x100000];
+//extern uint8_t RAM[0x100000];
 uint8_t read8237 (uint8_t channel) {
 	uint8_t ret;
 	if (dmachan[channel].masked) return (128);

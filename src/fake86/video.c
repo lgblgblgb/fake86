@@ -1,6 +1,7 @@
 /*
   Fake86: A portable, open-source 8086 PC emulator.
   Copyright (C)2010-2013 Mike Chambers
+            (C)2020      Gabor Lenart "LGB"
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -27,23 +28,26 @@
 #include "mutex.h"
 #include "cpu.h"
 
-extern void set_port_write_redirector (uint16_t startport, uint16_t endport, void *callback);
-extern void set_port_read_redirector (uint16_t startport, uint16_t endport, void *callback);
+#include "externs.h"
+#include "render.h"
+
+//extern void set_port_write_redirector (uint16_t startport, uint16_t endport, void *callback);
+//extern void set_port_read_redirector (uint16_t startport, uint16_t endport, void *callback);
 
 //extern SDL_Surface *screen;
-extern uint8_t verbose;
-extern union _bytewordregs_ regs;
-extern uint8_t RAM[0x100000];
-extern uint8_t portram[0x10000];
-extern uint16_t segregs[4];
+//extern uint8_t verbose;
+//extern union _bytewordregs_ regs;
+//extern uint8_t RAM[0x100000];
+//extern uint8_t portram[0x10000];
+//extern uint16_t segregs[4];
 
-extern uint8_t read86 (uint32_t addr32);
-extern uint8_t write86 (uint32_t addr32, uint8_t value);
-extern uint8_t scrmodechange;
+//extern uint8_t read86 (uint32_t addr32);
+//extern void write86 (uint32_t addr32, uint8_t value);
+//extern uint8_t scrmodechange;
 
 uint8_t VRAM[262144], vidmode, cgabg, blankattr, vidgfxmode, vidcolor;
 uint16_t cursx, cursy, cols = 80, rows = 25, vgapage, cursorposition, cursorvisible;
-uint8_t updatedscreen, clocksafe, port3da, port6, portout16;
+uint8_t updatedscreen, clocksafe, port3da, port6;
 uint16_t VGA_SC[0x100], VGA_CRTC[0x100], VGA_ATTR[0x100], VGA_GC[0x100];
 uint32_t videobase= 0xB8000, textbase = 0xB8000, x, y;
 uint8_t fontcga[32768];
@@ -52,10 +56,10 @@ uint32_t usefullscreen = 0, usegrabmode = 0;
 
 uint8_t latchRGB = 0, latchPal = 0, VGA_latch[4], stateDAC = 0;
 uint8_t latchReadRGB = 0, latchReadPal = 0;
-uint32_t tempRGB;
+static uint32_t tempRGB;
 uint16_t oldw, oldh; //used when restoring screen mode
 
-extern SDL_PixelFormat *sdl_pixfmt;
+//extern SDL_PixelFormat *sdl_pixfmt;
 
 static inline uint32_t rgb(uint8_t r, uint8_t g, uint8_t b) {
 #if 0
@@ -74,7 +78,7 @@ static inline uint32_t rgb(uint8_t r, uint8_t g, uint8_t b) {
 	;
 }
 
-extern uint32_t nw, nh;
+//extern uint32_t nw, nh;
 void vidinterrupt(void) {
 	uint32_t tempcalc, memloc, n;
 	updatedscreen = 1;
@@ -274,7 +278,7 @@ void initcga( void )
 	int ret = fread (&fontcga[0], 32768, 1, fontfile);
 	fclose (fontfile);
 	if (ret != 1) {
-		fprintf(stderr, "DATAL: Cannot read file " PATH_DATAFILES "asciivga!\n");
+		fprintf(stderr, "FATAL: Cannot read file " PATH_DATAFILES "asciivga!\n");
 		exit(1);
 	}
 
@@ -732,7 +736,7 @@ uint8_t inVGA (uint16_t portnum) {
 	}\
 }
 
-uint8_t lastmode = 0, tempvalue;
+//static uint8_t lastmode = 0, tempvalue;
 void writeVGA (uint32_t addr32, uint8_t value) {
 	uint32_t planesize;
 	uint8_t curval, tempand, cnt;
@@ -859,8 +863,8 @@ void writeVGA (uint32_t addr32, uint8_t value) {
 		}
 }
 
-uint8_t readmode;
-uint32_t readmap;
+//uint8_t readmode;
+//uint32_t readmap;
 uint8_t readVGA (uint32_t addr32) {
 	uint32_t planesize;
 	planesize = 0x10000;

@@ -1,8 +1,11 @@
 #include "../config.h"
 #include "../../../win32/resource.h"
 #include <windows.h>
-#include <SDL/SDL.h>
-#include <SDL/SDL_syswm.h>
+#include <SDL.h>
+#include <SDL_syswm.h>
+
+#include "externs.h"
+#include "render.h"
 
 HWND myWindow;
 HINSTANCE myInstance;
@@ -34,12 +37,20 @@ void initmenus(void) {
 	return;
 }
 
+//extern SDL_Window *sdl_win;
+
 HWND GetHwnd(void) {
+#if 0
 	SDL_SysWMinfo wmi;
 	SDL_VERSION(&wmi.version);
 
 	if (!SDL_GetWMInfo(&wmi)) return(NULL);
 	return(wmi.window);
+#endif
+	SDL_SysWMinfo systemInfo;
+	SDL_VERSION(&systemInfo.version);
+	SDL_GetWindowWMInfo(sdl_win, &systemInfo);
+	return systemInfo.info.win.window;
 }
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -53,13 +64,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 }
 
 void SetWndProc(void) {
+#ifdef _WIN64
+	oldProc = (WNDPROC)SetWindowLongPtr(myWindow, GWLP_WNDPROC, (LONG_PTR)WndProc);
+#else
 	oldProc = (WNDPROC)SetWindowLong(myWindow, GWL_WNDPROC, (LONG_PTR)WndProc);
+#endif
 }
 
-extern uint8_t running, bootdrive, dohardreset, scrmodechange;
-extern uint16_t constantw, constanth;
-uint8_t insertdisk (uint8_t drivenum, char *filename);
-uint8_t ejectdisk (uint8_t drivenum);
+//extern uint8_t running, bootdrive, dohardreset, scrmodechange;
+//extern uint16_t constantw, constanth;
+//uint8_t insertdisk (uint8_t drivenum, char *filename);
+//uint8_t ejectdisk (uint8_t drivenum);
 
 void MenuItemClick(WPARAM wParam) {
 	OPENFILENAME of_dlg;
@@ -82,7 +97,7 @@ void MenuItemClick(WPARAM wParam) {
 			of_dlg.lStructSize = sizeof(of_dlg);
 			of_dlg.lpstrTitle = "Open disk image";
 			of_dlg.hInstance = NULL;
-			of_dlg.lpstrFile = filename;
+			of_dlg.lpstrFile = (LPSTR)filename;
 			of_dlg.lpstrFilter = "Floppy disk images (*.img)\0*.img\0All files (*.*)\0*.*\0\0";
 			of_dlg.nMaxFile = MAX_PATH;
 			of_dlg.Flags = OFN_FILEMUSTEXIST | OFN_LONGNAMES;
@@ -106,7 +121,7 @@ void MenuItemClick(WPARAM wParam) {
 			of_dlg.lStructSize = sizeof(of_dlg);
 			of_dlg.lpstrTitle = "Open disk image";
 			of_dlg.hInstance = NULL;
-			of_dlg.lpstrFile = filename;
+			of_dlg.lpstrFile = (LPSTR)filename;
 			of_dlg.lpstrFilter = "Raw disk images (*.raw, *.img)\0*.raw;*.img\0All files (*.*)\0*.*\0\0";
 			of_dlg.nMaxFile = MAX_PATH;
 			of_dlg.Flags = OFN_FILEMUSTEXIST | OFN_LONGNAMES;

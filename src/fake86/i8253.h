@@ -17,6 +17,11 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#ifndef FAKE86_I8253_H_INCLUDED
+#define FAKE86_I8253_H_INCLUDED
+
+#include <stdint.h>
+
 #define PIT_MODE_LATCHCOUNT	0
 #define PIT_MODE_LOBYTE	1
 #define PIT_MODE_HIBYTE	2
@@ -31,3 +36,7 @@ struct i8253_s {
 	uint8_t active[3];
 	uint16_t counter[3];
 };
+
+extern struct i8253_s i8253;
+
+#endif

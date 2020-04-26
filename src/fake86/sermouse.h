@@ -17,6 +17,9 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#ifndef FAKE86_SERMOUSE_H_INCLUDED
+#define FAKE86_SERMOUSE_H_INCLUDED
+
 #include <stdint.h>
 
 struct sermouse_s {
@@ -24,3 +27,5 @@ struct sermouse_s {
 	uint8_t buf[16];
 	int8_t bufptr;
 };
+
+#endif

@@ -24,9 +24,11 @@
 #include "i8253.h"
 #include "mutex.h"
 
-extern struct i8253_s i8253;
+#include "externs.h"
 
-extern uint64_t gensamplerate;
+//extern struct i8253_s i8253;
+
+//extern uint64_t gensamplerate;
 uint64_t speakerfullstep, speakerhalfstep, speakercurstep = 0;
 int16_t speakerpos = 0;
 

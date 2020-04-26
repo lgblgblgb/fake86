@@ -25,11 +25,13 @@
 #include <string.h>
 #include "sermouse.h"
 
-extern void set_port_write_redirector (uint16_t startport, uint16_t endport, void *callback);
-extern void set_port_read_redirector (uint16_t startport, uint16_t endport, void *callback);
-extern void doirq (uint8_t irqnum);
+#include "externs.h"
 
-struct sermouse_s sermouse;
+//extern void set_port_write_redirector (uint16_t startport, uint16_t endport, void *callback);
+//extern void set_port_read_redirector (uint16_t startport, uint16_t endport, void *callback);
+//extern void doirq (uint8_t irqnum);
+
+static struct sermouse_s sermouse;
 
 void bufsermousedata (uint8_t value) {
 	if (sermouse.bufptr == 16) return;

@@ -24,24 +24,27 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "disk.h"
 
-extern struct struct_drive disk[256];
+#include "externs.h"
+
+//extern struct struct_drive disk[256];
 #ifndef _WIN32
 #define strcmpi strcasecmp
 #else
-#define strcmpi _strcmpi
+#define strcmpi _stricmp
 #endif
 
-extern uint8_t bootdrive, ethif, verbose, cgaonly, usessource, noscale, nosmooth, renderbenchmark, useconsole, doaudio;
-extern char *biosfile;
-extern uint32_t framedelay, textbase, usefullscreen, speed;
-extern int32_t usesamplerate, latency;
+//extern uint8_t bootdrive, ethif, verbose, cgaonly, usessource, noscale, nosmooth, renderbenchmark, useconsole, doaudio;
+//extern char *biosfile;
+//extern uint32_t framedelay, textbase, usefullscreen, speed;
+//extern int32_t usesamplerate, latency;
 uint16_t constantw = 0, constanth = 0;
 uint8_t slowsystem = 0;
 
-extern uint8_t insertdisk (uint8_t drivenum, char *filename);
-extern uint32_t loadrom (uint32_t addr32, const char *filename, uint8_t failure_fatal);
+//extern uint8_t insertdisk (uint8_t drivenum, char *filename);
+//extern uint32_t loadrom (uint32_t addr32, const char *filename, uint8_t failure_fatal);
 
 uint32_t hextouint(char *src) {
 	uint32_t tempuint = 0, cc;

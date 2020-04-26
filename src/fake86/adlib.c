@@ -24,10 +24,12 @@
 #include <stdint.h>
 #include <stdio.h>
 
-extern void set_port_write_redirector (uint16_t startport, uint16_t endport, void *callback);
-extern void set_port_read_redirector (uint16_t startport, uint16_t endport, void *callback);
+#include "externs.h"
 
-extern int32_t usesamplerate;
+//extern void set_port_write_redirector (uint16_t startport, uint16_t endport, void *callback);
+//extern void set_port_read_redirector (uint16_t startport, uint16_t endport, void *callback);
+
+//extern int32_t usesamplerate;
 
 double samprateadjust = 1.0;
 uint8_t optable[0x16] = { 0, 0, 0, 1, 1, 1, 255, 255, 0, 0, 0, 1, 1, 1, 255, 255, 0, 0, 0, 1, 1, 1 };
@@ -188,7 +190,7 @@ uint64_t fullstep, adlibstep[9];
 double adlibenv[9], adlibdecay[9], adlibattack[9];
 uint8_t adlibdidattack[9];
 
-extern SDL_AudioSpec wanted;
+//extern SDL_AudioSpec wanted;
 int32_t adlibsample (uint8_t curchan) {
 	int32_t tempsample;
 	double tempstep;

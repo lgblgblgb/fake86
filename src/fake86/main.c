@@ -1,6 +1,7 @@
 /*
   Fake86: A portable, open-source 8086 PC emulator.
   Copyright (C)2010-2013 Mike Chambers
+            (C)2020      Gabor Lenart "LGB"
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -30,7 +31,7 @@
 #include <memory.h>
 #include "mutex.h"
 #ifdef _WIN32
-CRITICAL_SECTION screenmutex;
+extern CRITICAL_SECTION screenmutex;
 #else
 #include <unistd.h>
 #ifndef __APPLE__
@@ -39,24 +40,26 @@ CRITICAL_SECTION screenmutex;
 pthread_t consolethread;
 #endif
 
-const char *build = BUILD_STRING;
+#include "externs.h"
 
-extern uint8_t RAM[0x100000], readonly[0x100000];
-extern uint8_t running, renderbenchmark;
+static const char *build = BUILD_STRING;
 
-extern void reset86(void);
-extern void exec86 (uint32_t execloops);
-extern int  initscreen (const char *ver);
-extern void VideoThread(void);
-extern void doscrmodechange(void);
-extern void handleinput(void);
+//extern uint8_t RAM[0x100000], readonly[0x100000];
+//extern uint8_t running, renderbenchmark;
+
+//extern void reset86(void);
+//extern void exec86 (uint32_t execloops);
+//extern int  initscreen (const char *ver);
+//extern void VideoThread(void);
+//extern void doscrmodechange(void);
+//extern void handleinput(void);
 
 #ifdef CPU_ADDR_MODE_CACHE
-extern uint64_t cached_access_count, uncached_access_count;
+//extern uint64_t cached_access_count, uncached_access_count;
 #endif
 
-extern uint8_t scrmodechange, doaudio;
-extern uint64_t totalexec, totalframes;
+//extern uint8_t scrmodechange, doaudio;
+//extern uint64_t totalexec, totalframes;
 uint64_t starttick, endtick, lasttick;
 
 uint8_t verbose = 0, cgaonly = 0, useconsole = 0;
@@ -64,25 +67,24 @@ char *biosfile = NULL;
 uint32_t speed = 0;
 
 
-uint32_t loadbinary (uint32_t addr32, const char *filename, uint8_t roflag) {
-	FILE *binfile = NULL;
-	uint32_t readsize;
-
-	binfile = fopen (filename, "rb");
-	if (binfile == NULL) {
-		return (0);
-	}
-
+uint32_t loadbinary (uint32_t addr32, const char *filename, uint8_t roflag)
+{
+	FILE *binfile = fopen (filename, "rb");
+	if (binfile == NULL)
+		return 0;
 	fseek (binfile, 0, SEEK_END);
-	readsize = ftell (binfile);
+	long readsize = ftell (binfile);
+	if (readsize > 0x10000 || readsize <= 0) {
+		fclose(binfile);
+		return 0;
+	}
 	fseek (binfile, 0, SEEK_SET);
-	int ret = fread ( (void *) &RAM[addr32], 1, readsize, binfile);
+	long ret = fread(RAM + addr32, 1, readsize, binfile);
 	fclose (binfile);
 	if (ret != readsize)
 		return 0;
-
-	memset ( (void *) &readonly[addr32], roflag, readsize);
-	return (readsize);
+	memset(readonly + addr32, roflag, readsize);
+	return readsize;
 }
 
 uint32_t loadrom (uint32_t addr32, const char *filename, uint8_t failure_fatal) {
@@ -100,56 +102,55 @@ uint32_t loadrom (uint32_t addr32, const char *filename, uint8_t failure_fatal) 
 	}
 }
 
-uint32_t loadbios (const char *filename) {
-	FILE *binfile = NULL;
-	uint32_t readsize;
-
-	binfile = fopen(filename, "rb");
-	if (binfile == NULL) {
+uint32_t loadbios (const char *filename)
+{
+	FILE *binfile = fopen(filename, "rb");
+	if (binfile == NULL)
+		return 0;
+	fseek(binfile, 0, SEEK_END);
+	long readsize = ftell(binfile);
+	if (readsize > 0x10000 || readsize <= 0) {
+		fclose(binfile);
 		return 0;
 	}
-
-	fseek(binfile, 0, SEEK_END);
-	readsize = ftell(binfile);
 	fseek(binfile, 0, SEEK_SET);
-	int ret = fread((void*)&RAM[0x100000 - readsize], 1, readsize, binfile);
+	long ret = fread((void*)&RAM[0x100000 - readsize], 1, readsize, binfile);
 	fclose(binfile);
 	if (ret != readsize)
 		return 0;
-
 	memset((void*)&readonly[0x100000 - readsize], 1, readsize);
 	return readsize;
 }
 
-extern uint32_t SDL_GetTicks(void);
-extern uint8_t insertdisk (uint8_t drivenum, char *filename);
-extern void ejectdisk (uint8_t drivenum);
-extern uint8_t bootdrive, ethif, net_enabled;
-extern void doirq (uint8_t irqnum);
+//extern uint32_t SDL_GetTicks(void);
+//extern uint8_t insertdisk (uint8_t drivenum, char *filename);
+//extern void ejectdisk (uint8_t drivenum);
+//extern uint8_t bootdrive, ethif, net_enabled;
+//extern void doirq (uint8_t irqnum);
 //extern void isa_ne2000_init(int baseport, uint8_t irq);
-extern void parsecl (int argc, char *argv[]);
+//extern void parsecl (int argc, char *argv[]);
 void timing(void);
 void tickaudio(void);
 void inittiming(void);
 void initaudio(void);
 void init8253(void);
 void init8259(void);
-extern void init8237(void);
-extern void initVideoPorts(void);
-extern void killaudio(void);
-extern void initsermouse (uint16_t baseport, uint8_t irq);
-extern void *port_write_callback[0x10000];
-extern void *port_read_callback[0x10000];
-extern void *port_write_callback16[0x10000];
-extern void *port_read_callback16[0x10000];
-extern void initadlib (uint16_t baseport);
-extern void initsoundsource(void);
-extern void isa_ne2000_init (uint16_t baseport, uint8_t irq);
-extern void initBlaster (uint16_t baseport, uint8_t irq);
+//extern void init8237(void);
+//extern void initVideoPorts(void);
+//extern void killaudio(void);
+//extern void initsermouse (uint16_t baseport, uint8_t irq);
+//extern void *port_write_callback[0x10000];
+//extern void *port_read_callback[0x10000];
+//extern void *port_write_callback16[0x10000];
+//extern void *port_read_callback16[0x10000];
+//extern void initadlib (uint16_t baseport);
+//extern void initsoundsource(void);
+//extern void isa_ne2000_init (uint16_t baseport, uint8_t irq);
+//extern void initBlaster (uint16_t baseport, uint8_t irq);
 
 #ifdef NETWORKING_ENABLED
-extern void initpcap(void);
-extern void dispatch(void);
+//extern void initpcap(void);
+//extern void dispatch(void);
 #endif
 
 void printbinary (uint8_t value) {
@@ -168,20 +169,20 @@ void inithardware(void) {
 	if (ethif != 254)
 		initpcap();
 #endif
-	printf ("Initializing emulated hardware:\n");
-	memset (port_write_callback, 0, sizeof (port_write_callback) );
-	memset (port_read_callback, 0, sizeof (port_read_callback) );
-	memset (port_write_callback16, 0, sizeof (port_write_callback16) );
-	memset (port_read_callback16, 0, sizeof (port_read_callback16) );
-	printf ("  - Intel 8253 timer: ");
+	printf("Initializing emulated hardware:\n");
+	memset(port_write_callback, 0, sizeof(port_write_callback));
+	memset(port_read_callback, 0, sizeof(port_read_callback));
+	memset(port_write_callback16, 0, sizeof(port_write_callback16));
+	memset(port_read_callback16, 0, sizeof(port_read_callback16));
+	printf("  - Intel 8253 timer: ");
 	init8253();
-	printf ("OK\n");
-	printf ("  - Intel 8259 interrupt controller: ");
+	printf("OK\n");
+	printf("  - Intel 8259 interrupt controller: ");
 	init8259();
-	printf ("OK\n");
-	printf ("  - Intel 8237 DMA controller: ");
+	printf("OK\n");
+	printf("  - Intel 8237 DMA controller: ");
 	init8237();
-	printf ("OK\n");
+	printf("OK\n");
 	initVideoPorts();
 	if (usessource) {
 		printf ("  - Disney Sound Source: ");
@@ -189,19 +190,19 @@ void inithardware(void) {
 		printf ("OK\n");
 	}
 #ifndef NETWORKING_OLDCARD
-	printf ("  - Novell NE2000 ethernet adapter: ");
-	isa_ne2000_init (0x300, 6);
+	printf("  - Novell NE2000 ethernet adapter: ");
+	isa_ne2000_init(0x300, 6);
 	printf ("OK\n");
 #endif
-	printf ("  - Adlib FM music card: ");
-	initadlib (0x388);
-	printf ("OK\n");
-	printf ("  - Creative Labs Sound Blaster 2.0: ");
-	initBlaster (0x220, 7);
-	printf ("OK\n");
-	printf ("  - Serial mouse (Microsoft compatible): ");
+	printf("  - Adlib FM music card: ");
+	initadlib(0x388);
+	printf("OK\n");
+	printf("  - Creative Labs Sound Blaster 2.0: ");
+	initBlaster(0x220, 7);
+	printf("OK\n");
+	printf("  - Serial mouse (Microsoft compatible): ");
 	initsermouse (0x3F8, 4);
-	printf ("OK\n");
+	printf("OK\n");
 	if (doaudio)
 		initaudio();
 	inittiming();
@@ -253,17 +254,20 @@ void runconsole (void *dummy);
 #else
 void *runconsole (void *dummy);
 #endif
-extern void bufsermousedata (uint8_t value);
-int main (int argc, char *argv[]) {
+//extern void bufsermousedata (uint8_t value);
+
+
+int main ( int argc, char *argv[] )
+{
 	uint32_t biossize;
 
-	printf ("%s (c)2010-2013 Mike Chambers\n  (c)2020 Gabor Lenart LGB (clean-up, SDL2, new features, etc)\n", build);
-	printf ("[A portable, open-source 8086 PC emulator]\n\n");
+	printf("%s (C)2010-2013 Mike Chambers, (C)2020 Gabor Lenart \"LGB\"\n", build);
+	printf("[A portable, open-source 8086 PC emulator]\n\n");
 
-	parsecl (argc, argv);
+	parsecl(argc, argv);
 
-	memset (readonly, 0, 0x100000);
-	biossize = loadbios (biosfile);
+	memset(readonly, 0, 0x100000);
+	biossize = loadbios(biosfile);
 	if (!biossize)
 		return -1;
 #ifdef DISK_CONTROLLER_ATA
@@ -271,14 +275,14 @@ int main (int argc, char *argv[]) {
 		return -1;
 #endif
 	if (biossize <= 8192) {
-		loadrom (0xF6000UL, PATH_DATAFILES "rombasic.bin", 0);
+		loadrom(0xF6000UL, PATH_DATAFILES "rombasic.bin", 0);
 		if (!loadrom(0xC0000UL, PATH_DATAFILES "videorom.bin", 1))
 			return -1;
 	}
-	printf ("\nInitializing CPU... ");
+	printf("\nInitializing CPU... ");
 	running = 1;
 	reset86();
-	printf ("OK!\n");
+	printf("OK!\n");
 
 #ifndef _WIN32
 #ifndef __APPLE__
@@ -293,16 +297,16 @@ int main (int argc, char *argv[]) {
 #endif
 	if (useconsole) {
 #ifdef _WIN32
-		_beginthread (runconsole, 0, NULL);
+		_beginthread(runconsole, 0, NULL);
 #else
-		pthread_create (&consolethread, NULL, (void *) runconsole, NULL);
+		pthread_create(&consolethread, NULL, (void*)runconsole, NULL);
 #endif
 	}
 
 #ifdef _WIN32
-		_beginthread (EmuThread, 0, NULL);
+		_beginthread(EmuThread, 0, NULL);
 #else
-		pthread_create (&emuthread, NULL, (void *) EmuThread, NULL);
+		pthread_create(&emuthread, NULL, (void*)EmuThread, NULL);
 #endif
 
 	lasttick = starttick = SDL_GetTicks();
@@ -325,16 +329,16 @@ int main (int argc, char *argv[]) {
 	killaudio();
 
 	if (renderbenchmark) {
-		printf("\n%llu frames rendered in %llu seconds.\n", (long long unsigned int)totalframes, (long long unsigned int)endtick);
-		printf("Average framerate: %llu FPS.\n", (long long unsigned int)(totalframes / endtick));
+		printf("\n%lu frames rendered in %lu seconds.\n", (long unsigned int)totalframes, (long unsigned int)endtick);
+		printf("Average framerate: %lu FPS.\n", (long unsigned int)(totalframes / endtick));
 	}
 
-	printf("\n%llu instructions executed in %llu seconds.\n", (long long unsigned int)totalexec, (long long unsigned int)endtick);
-	printf("Average speed: %llu instructions/second.\n", (long long unsigned int)(totalexec / endtick));
+	printf("\n%lu instructions executed in %lu seconds.\n", (long unsigned int)totalexec, (long unsigned int)endtick);
+	printf("Average speed: %lu instructions/second.\n", (long unsigned int)(totalexec / endtick));
 
 #ifdef CPU_ADDR_MODE_CACHE
-	printf("\n  Cached modregrm data access count: %llu\n", cached_access_count);
-	printf("Uncached modregrm data access count: %llu\n", uncached_access_count);
+	printf("\n  Cached modregrm data access count: %lu\n", (long unsigned int)cached_access_count);
+	printf("Uncached modregrm data access count: %lu\n", (long unsigned int)uncached_access_count);
 #endif
 
 	if (useconsole)

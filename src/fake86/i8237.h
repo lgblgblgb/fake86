@@ -17,6 +17,9 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#ifndef FAKE86_I8237_H_INCLUDED
+#define FAKE86_I8237_H_INCLUDED
+
 #include <stdint.h>
 
 struct dmachan_s {
@@ -29,3 +32,5 @@ struct dmachan_s {
 	uint8_t writemode;
 	uint8_t masked;
 };
+
+#endif

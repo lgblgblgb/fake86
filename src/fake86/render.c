@@ -1,6 +1,7 @@
 /*
   Fake86: A portable, open-source 8086 PC emulator.
   Copyright (C)2010-2013 Mike Chambers
+            (C)2020      Gabor Lenart "LGB"
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -24,13 +25,16 @@
 #include <SDL.h>
 #include <stdint.h>
 #include <stdio.h>
+#include "render.h"
 #include "mutex.h"
+
+#include "externs.h"
 
 // For texture size we want to use the largest width and height for
 // any emulated PC mode!! Since we will update only parts of this
 // texture based on the actual PC video mode wanted to be emulated.
 #define WINDOW_WIDTH	640
-#define WINDOW_HEIGHT	480
+#define WINDOW_HEIGHT	400
 #define TEXTURE_WIDTH	720
 #define TEXTURE_HEIGHT	480
 #define PIXEL_FORMAT	SDL_PIXELFORMAT_ARGB8888
@@ -46,15 +50,15 @@ pthread_mutex_t screenmutex = PTHREAD_MUTEX_INITIALIZER;
 //uint32_t *scalemap = NULL;
 uint8_t regenscalemap = 1;
 
-extern uint8_t RAM[0x100000], portram[0x10000];
-extern uint8_t VRAM[262144], vidmode, cgabg, blankattr, vidgfxmode, vidcolor, running;
-extern uint16_t cursx, cursy, cols, rows, vgapage, cursorposition, cursorvisible;
-extern uint8_t updatedscreen, clocksafe, port3da, port6, portout16;
-extern uint16_t VGA_SC[0x100], VGA_CRTC[0x100], VGA_ATTR[0x100], VGA_GC[0x100];
-extern uint32_t videobase, textbase, x, y;
-extern uint8_t fontcga[32768];
-extern uint32_t palettecga[16], palettevga[256];
-extern uint32_t usefullscreen, usegrabmode;
+//extern uint8_t RAM[0x100000], portram[0x10000];
+//extern uint8_t VRAM[262144], vidmode, cgabg, blankattr, vidgfxmode, vidcolor, running;
+//extern uint16_t cursx, cursy, cols, rows, vgapage, cursorposition, cursorvisible;
+//extern uint8_t updatedscreen, clocksafe, port3da, port6;
+//extern uint16_t VGA_SC[0x100], VGA_CRTC[0x100], VGA_ATTR[0x100], VGA_GC[0x100];
+//extern uint32_t videobase, textbase, x, y;
+//extern uint8_t fontcga[32768];
+//extern uint32_t palettecga[16], palettevga[256];
+//extern uint32_t usefullscreen, usegrabmode;
 
 uint64_t totalframes = 0;
 uint32_t framedelay = 20;
@@ -63,18 +67,18 @@ char windowtitle[128];
 
 void initcga(void);
 #ifdef _WIN32
-void VideoThread (void *dummy);
+static void VideoThread (void *dummy);
 #else
-void *VideoThread (void *dummy);
+static void *VideoThread (void *dummy);
 #endif
 
 SDL_Window   *sdl_win = NULL;
-SDL_Renderer *sdl_ren = NULL;
-SDL_Texture  *sdl_tex = NULL;
+static SDL_Renderer *sdl_ren = NULL;
+static SDL_Texture  *sdl_tex = NULL;
 SDL_PixelFormat *sdl_pixfmt = NULL;
 
 
-void setwindowtitle (const char *extra) {
+void setwindowtitle ( const char *extra ) {
 	char temptext[256];
 	sprintf(temptext, "%s%s", windowtitle, extra ? extra : "");
 	SDL_SetWindowTitle(sdl_win, temptext);
@@ -84,10 +88,10 @@ void setwindowtitle (const char *extra) {
 int initscreen ( const char *ver )
 {
 	if (doaudio) {
-		if (SDL_Init (SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER) )
+		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER) )
 			return 1;
 	} else {
-		if (SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER) )
+		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) )
 			return 1;
 	}
 	//screen = SDL_SetVideoMode (640, 400, 32, SDL_HWSURFACE);
@@ -115,19 +119,19 @@ int initscreen ( const char *ver )
 	sdl_pixfmt = SDL_AllocFormat(PIXEL_FORMAT);
 	if (!sdl_pixfmt)
 		return 1;
-	printf("Rmask=%08X Gmask=%08X Bmask=%08X Amask=%08X Rloss=%d Gloss=%d Bloss=%d Aloss=%d Rshift=%d Gshift=%d Bshift=%d Ashift=%d\n",
+/*	printf("Rmask=%08X Gmask=%08X Bmask=%08X Amask=%08X Rloss=%d Gloss=%d Bloss=%d Aloss=%d Rshift=%d Gshift=%d Bshift=%d Ashift=%d\n",
 		sdl_pixfmt->Rmask,  sdl_pixfmt->Gmask,  sdl_pixfmt->Bmask,  sdl_pixfmt->Amask,
 		sdl_pixfmt->Rloss,  sdl_pixfmt->Gloss,  sdl_pixfmt->Bloss,  sdl_pixfmt->Aloss,
 		sdl_pixfmt->Rshift, sdl_pixfmt->Gshift, sdl_pixfmt->Bshift, sdl_pixfmt->Ashift
-	);
+	); */
 	sprintf(windowtitle, "%s", ver);
 	setwindowtitle(NULL);
 	initcga();
 #ifdef _WIN32
-	InitializeCriticalSection (&screenmutex);
-	_beginthread (VideoThread, 0, NULL);
+	InitializeCriticalSection(&screenmutex);
+	_beginthread(VideoThread, 0, NULL);
 #else
-	pthread_create (&vidthread, NULL, (void *) VideoThread, NULL);
+	pthread_create(&vidthread, NULL, (void *) VideoThread, NULL);
 #endif
 	return 0;
 }
@@ -161,13 +165,13 @@ void createscalemap(void) {
 #endif
 }
 
-extern uint16_t oldw, oldh, constantw, constanth;
+//extern uint16_t oldw, oldh, constantw, constanth;
 static void draw(void);
-extern void handleinput(void);
+//extern void handleinput(void);
 #ifdef _WIN32
-void VideoThread (void *dummy) {
+static void VideoThread (void *dummy) {
 #else
-void *VideoThread (void *dummy) {
+static void *VideoThread (void *dummy) {
 #endif
 	uint32_t cursorprevtick, cursorcurtick, delaycalc;
 	cursorprevtick = SDL_GetTicks();
@@ -247,157 +251,11 @@ void doscrmodechange(void) {
 #endif
 }
 
-#if 0
-void stretchblit (SDL_Surface *target) {
-	uint32_t srcx, srcy, dstx, dsty, lastx, lasty, r, g, b;
-	uint32_t consecutivex, consecutivey = 0, limitx, limity, scalemapptr;
-	uint32_t ofs;
-	uint8_t *pixelrgb;
-
-	limitx = (uint32_t)((double) nw / (double) target->w);
-	limity = (uint32_t)((double) nh / (double) target->h);
-
-	if (SDL_MUSTLOCK (target) )
-		if (SDL_LockSurface (target) < 0)
-			return;
-
-	lasty = 0;
-	scalemapptr = 0;
-	for (dsty=0; dsty<(uint32_t)target->h; dsty++) {
-			srcy = scalemap[scalemapptr++];
-			ofs = dsty*target->w;
-			consecutivex = 0;
-			lastx = 0;
-			if (srcy == lasty) consecutivey++;
-			else consecutivey = 0;
-			for (dstx=0; dstx<(uint32_t)target->w; dstx++) {
-					srcx = scalemap[scalemapptr++];
-					pixelrgb = (uint8_t *) &prestretch[srcy][srcx];
-					r = pixelrgb[0];
-					g = pixelrgb[1];
-					b = pixelrgb[2];
-					if (srcx == lastx) consecutivex++;
-					else consecutivex = 0;
-					if ( (consecutivex > limitx) && (consecutivey > limity) ) {
-							pixelrgb = (uint8_t *) &prestretch[srcy][srcx+1];
-							r += pixelrgb[0];
-							g += pixelrgb[1];
-							b += pixelrgb[2];
-							pixelrgb = (uint8_t *) &prestretch[srcy+1][srcx];
-							r += pixelrgb[0];
-							g += pixelrgb[1];
-							b += pixelrgb[2];
-							pixelrgb = (uint8_t *) &prestretch[srcy+1][srcx+1];
-							r += pixelrgb[0];
-							g += pixelrgb[1];
-							b += pixelrgb[2];
-							r = r >> 2;
-							g = g >> 2;
-							b = b >> 2;
-							//r = 255; g = 0; b = 0;
-						}
-					else if (consecutivex > limitx) {
-							pixelrgb = (uint8_t *) &prestretch[srcy][srcx+1];
-							r += pixelrgb[0];
-							r = r >> 1;
-							g += pixelrgb[1];
-							g = g >> 1;
-							b += pixelrgb[2];
-							b = b >> 1;
-							//r = 0; g = 255; b = 0;
-						}
-					else if (consecutivey > limity) {
-							pixelrgb = (uint8_t *) &prestretch[srcy+1][srcx];
-							r += pixelrgb[0];
-							r = r >> 1;
-							g += pixelrgb[1];
-							g = g >> 1;
-							b += pixelrgb[2];
-							b = b >> 1;
-							//r = 0; g = 0; b = 255;
-						}
-					( (uint32_t *) target->pixels) [ofs++] = SDL_MapRGB (target->format, (uint8_t) r, (uint8_t) g, (uint8_t) b);
-					lastx = srcx;
-				}
-			lasty = srcy;
-		}
-
-	if (SDL_MUSTLOCK (target) )
-		SDL_UnlockSurface (target);
-	SDL_UpdateRect (target, 0, 0, target->w, target->h);
-}
-#endif
-
-#if 0
-void roughblit (SDL_Surface *target) {
-	uint32_t srcx, srcy, dstx, dsty, scalemapptr;
-	int32_t ofs;
-	uint8_t *pixelrgb;
-
-	if (SDL_MUSTLOCK (target) )
-		if (SDL_LockSurface (target) < 0)
-			return;
-
-	scalemapptr = 0;
-	for (dsty=0; dsty<(uint32_t)target->h; dsty++) {
-			srcy = scalemap[scalemapptr++];
-			ofs = dsty*target->w;
-			for (dstx=0; dstx<(uint32_t)target->w; dstx++) {
-					srcx = scalemap[scalemapptr++];
-					pixelrgb = (uint8_t *) &prestretch[srcy][srcx];
-					( (uint32_t *) target->pixels) [ofs++] = SDL_MapRGB (target->format, pixelrgb[0], pixelrgb[1], pixelrgb[2]);
-				}
-		}
-
-	if (SDL_MUSTLOCK (target) )
-		SDL_UnlockSurface (target);
-	SDL_UpdateRect (target, 0, 0, target->w, target->h);
-}
-#endif
 
 
 
-/* NOTE: doubleblit is only used when smoothing is not enabled, and the SDL window size
-         is exactly double of native resolution for the current video mode. we can take
-         advantage of the fact that every pixel is simply doubled both horizontally and
-         vertically. this way, we do not need to waste mountains of CPU time doing
-         floating point multiplication for each and every on-screen pixel. it makes the
-         difference between games being smooth and playable, and being jerky on my old
-         400 MHz PowerPC G3 iMac.
-*/
-#if 0
-void doubleblit (SDL_Surface *target) {
-	uint32_t srcx, srcy, dstx, dsty, curcolor;
-	int32_t ofs; //, startofs;
-	uint8_t *pixelrgb;
 
-	if (SDL_MUSTLOCK (target) )
-		if (SDL_LockSurface (target) < 0)
-			return;
-
-	for (dsty=0; dsty<(uint32_t)target->h; dsty += 2) {
-			srcy = (uint32_t) (dsty >> 1);
-			//startofs = ofs = dsty*target->w;
-			ofs = dsty*target->w;
-			for (dstx=0; dstx<(uint32_t)target->w; dstx += 2) {
-					srcx = (uint32_t) (dstx >> 1);
-					pixelrgb = (uint8_t *) &prestretch[srcy][srcx];
-					curcolor = SDL_MapRGB (target->format, pixelrgb[0], pixelrgb[1], pixelrgb[2]);
-					( (uint32_t *) target->pixels) [ofs+target->w] = curcolor;
-					( (uint32_t *) target->pixels) [ofs++] = curcolor;
-					( (uint32_t *) target->pixels) [ofs+target->w] = curcolor;
-					( (uint32_t *) target->pixels) [ofs++] = curcolor;
-				}
-		}
-
-	if (SDL_MUSTLOCK (target) )
-		SDL_UnlockSurface (target);
-	SDL_UpdateRect (target, 0, 0, target->w, target->h);
-}
-#endif
-
-
-static struct pixel_access {
+static struct {
 	SDL_Rect	rect;
 	int		texture_pitch;
 	int		tail;
@@ -431,7 +289,7 @@ static uint32_t *start_pixel_access ( int nw, int nh )
 }
 
 
-extern uint16_t vtotal;
+//extern uint16_t vtotal;
 static void draw (void) {
 	uint32_t planemode, vgapage, color, chary, charx, vidptr, divx, divy, curchar, curpixel, usepal, intensity, blockw, curheight, x1, y1;
 	// Nice. Now time to render madness.

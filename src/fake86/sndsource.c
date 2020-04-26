@@ -22,10 +22,12 @@
 #include "config.h"
 #include <stdint.h>
 
-extern void set_port_write_redirector (uint16_t startport, uint16_t endport, void *callback);
-extern void set_port_read_redirector (uint16_t startport, uint16_t endport, void *callback);
+#include "externs.h"
 
-extern uint8_t portram[0x10000];
+//extern void set_port_write_redirector (uint16_t startport, uint16_t endport, void *callback);
+//extern void set_port_read_redirector (uint16_t startport, uint16_t endport, void *callback);
+
+//extern uint8_t portram[0x10000];
 uint8_t ssourcebuf[16], ssourceptr = 0, ssourceactive = 0;
 int16_t ssourcecursample = 0;
 

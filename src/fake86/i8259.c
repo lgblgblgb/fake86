@@ -25,12 +25,14 @@
 #include <string.h>
 #include "i8259.h"
 
+#include "externs.h"
+
 struct structpic i8259;
 
-extern uint8_t keyboardwaitack;
+//extern uint8_t keyboardwaitack;
 
-extern void set_port_write_redirector(uint16_t startport, uint16_t endport, void *callback);
-extern void set_port_read_redirector(uint16_t startport, uint16_t endport, void *callback);
+//extern void set_port_write_redirector(uint16_t startport, uint16_t endport, void *callback);
+//extern void set_port_read_redirector(uint16_t startport, uint16_t endport, void *callback);
 
 uint8_t in8259(uint16_t portnum) {
 	switch (portnum & 1) {
@@ -42,7 +44,7 @@ uint8_t in8259(uint16_t portnum) {
 	return (0);
 }
 
-extern uint32_t makeupticks;
+//extern uint32_t makeupticks;
 void out8259(uint16_t portnum, uint8_t value) {
 	 uint8_t i;
 	 switch (portnum & 1) {

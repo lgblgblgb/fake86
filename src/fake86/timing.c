@@ -34,21 +34,23 @@ struct timeval tv;
 #include "i8253.h"
 #include "blaster.h"
 
-extern struct blaster_s blaster;
-extern struct i8253_s i8253;
-extern void doirq (uint8_t irqnum);
-extern void tickaudio(void);
-extern void tickssource(void);
-extern void tickadlib(void);
-extern void tickBlaster(void);
+#include "externs.h"
 
-uint64_t hostfreq = 1000000, lasttick = 0, curtick = 0, tickgap, i8253tickgap, lasti8253tick, scanlinetiming, lastscanlinetick, curscanline = 0;
+//extern struct blaster_s blaster;
+//extern struct i8253_s i8253;
+//extern void doirq (uint8_t irqnum);
+//extern void tickaudio(void);
+//extern void tickssource(void);
+//extern void tickadlib(void);
+//extern void tickBlaster(void);
+
+uint64_t hostfreq = 1000000, /*lasttick = 0,*/ curtick = 0, tickgap, i8253tickgap, lasti8253tick, scanlinetiming, lastscanlinetick, curscanline = 0;
 uint64_t sampleticks, lastsampletick, ssourceticks, lastssourcetick, adlibticks, lastadlibtick, lastblastertick, gensamplerate;
 
 uint16_t pit0counter = 65535;
-extern uint64_t totalexec;
-extern uint32_t speed;
-extern uint8_t port3da, doaudio, slowsystem;
+//extern uint64_t totalexec;
+//extern uint32_t speed;
+//extern uint8_t port3da, doaudio, slowsystem;
 
 void inittiming(void) {
 #ifdef _WIN32

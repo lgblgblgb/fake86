@@ -17,6 +17,9 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#ifndef FAKE86_BLASTER_H_INCLUDED
+#define FAKE86_BLASTER_H_INCLUDED
+
 #include <stdint.h>
 
 struct blaster_s {
@@ -46,3 +49,7 @@ struct blaster_s {
 		uint8_t reg[256];
 	} mixer;
 };
+
+extern struct blaster_s blaster;
+
+#endif

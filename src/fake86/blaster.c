@@ -25,13 +25,15 @@
 #include <string.h>
 #include "blaster.h"
 
-extern void set_port_write_redirector (uint16_t startport, uint16_t endport, void *callback);
-extern void set_port_read_redirector (uint16_t startport, uint16_t endport, void *callback);
-extern void doirq (uint8_t irqnum);
-extern uint8_t read8237 (uint8_t channel);
+#include "externs.h"
 
-extern void outadlib (uint16_t portnum, uint8_t value); //on the Sound Blaster Pro, ports (base+0) and (base+1) are for
-extern uint8_t inadlib (uint16_t portnum); //the OPL FM music chips, and are also mirrored at (base+8) (base+9)
+//extern void set_port_write_redirector (uint16_t startport, uint16_t endport, void *callback);
+//extern void set_port_read_redirector (uint16_t startport, uint16_t endport, void *callback);
+//extern void doirq (uint8_t irqnum);
+//extern uint8_t read8237 (uint8_t channel);
+
+//extern void outadlib (uint16_t portnum, uint8_t value); //on the Sound Blaster Pro, ports (base+0) and (base+1) are for
+//extern uint8_t inadlib (uint16_t portnum); //the OPL FM music chips, and are also mirrored at (base+8) (base+9)
 //as well as 0x388 and 0x389 to remain compatible with the older adlib cards
 
 struct blaster_s blaster;
@@ -42,7 +44,7 @@ void bufNewData (uint8_t value) {
 	blaster.memptr++;
 }
 
-extern uint64_t hostfreq;
+//extern uint64_t hostfreq;
 void setsampleticks(void) {
 	if (blaster.samplerate == 0) {
 			blaster.sampleticks = 0;

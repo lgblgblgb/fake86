@@ -1,6 +1,7 @@
 /*
   Fake86: A portable, open-source 8086 PC emulator.
   Copyright (C)2010-2013 Mike Chambers
+            (C)2020      Gabor Lenart "LGB"
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -32,24 +33,25 @@
 #define strcmpi strcasecmp
 #endif
 
+#include "externs.h"
+
 char inputline[1024];
 uint16_t inputptr = 0;
-extern uint8_t running;
+//extern uint8_t running;
 
-extern uint8_t insertdisk (uint8_t drivenum, char *filename);
-extern void ejectdisk (uint8_t drivenum);
+//extern uint8_t insertdisk (uint8_t drivenum, char *filename);
+//extern void ejectdisk (uint8_t drivenum);
 
 void waitforcmd (char *dst, uint16_t maxlen) {
 #ifdef _WIN32
 	uint16_t inputptr;
 	uint8_t cc;
-
 	inputptr = 0;
 	maxlen -= 2;
 	inputline[0] = 0;
 	while (running) {
-		if (_kbhit () ) {
-			cc = (uint8_t) _getch ();
+		if (_kbhit() ) {
+			cc = (uint8_t)_getch();
 			switch (cc) {
 				case 0:
 				case 9:
@@ -57,19 +59,20 @@ void waitforcmd (char *dst, uint16_t maxlen) {
 					break;
 				case 8: //backspace
 					if (inputptr > 0) {
-						printf ("%c %c", 8, 8);
+						printf("%c %c", 8, 8);
 						inputline[--inputptr] = 0;
 					}
 					break;
 				case 13: //enter
-					printf ("\n");
+					printf("\n");
 					return;
 				default:
 					if (inputptr < maxlen) {
 						inputline[inputptr++] = cc;
 						inputline[inputptr] = 0;
-						printf ("%c",cc);
+						printf("%c",cc);
 					}
+					break;
 			}
 		}
 		SDL_Delay(10); //don't waste CPU time while in the polling loop
@@ -82,14 +85,14 @@ void waitforcmd (char *dst, uint16_t maxlen) {
 }
 
 void consolehelp (void) {
-	printf ("\nConsole command summary:\n");
-	printf ("  The console is not very robust yet. There are only a few commands:\n\n");
-	printf ("    change fd0        Mount a new image file on first floppy drive.\n");
-	printf ("                      Entering a blank line just ejects any current image file.\n");
-	printf ("    change fd1        Mount a new image file on first floppy drive.\n");
-	printf ("                      Entering a blank line just ejects any current image file.\n");
-	printf ("    help              This help display.\n");
-	printf ("    quit              Immediately abort emulation and close Fake86.\n");
+	printf("\nConsole command summary:\n");
+	printf("  The console is not very robust yet. There are only a few commands:\n\n");
+	printf("    change fd0        Mount a new image file on first floppy drive.\n");
+	printf("                      Entering a blank line just ejects any current image file.\n");
+	printf("    change fd1        Mount a new image file on first floppy drive.\n");
+	printf("                      Entering a blank line just ejects any current image file.\n");
+	printf("    help              This help display.\n");
+	printf("    quit              Immediately abort emulation and close Fake86.\n");
 }
 
 #ifdef _WIN32
@@ -101,10 +104,10 @@ void *runconsole (void *dummy) {
 	printf ("Type \"help\" for a summary of commands.\n");
 	while (running) {
 		printf("\n>");
-		waitforcmd(inputline, sizeof(inputline) );
+		waitforcmd(inputline, sizeof(inputline));
 		if (strcmpi(inputline, "change fd0") == 0) {
 			printf("Path to new image file: ");
-			waitforcmd(inputline, sizeof(inputline) );
+			waitforcmd(inputline, sizeof(inputline));
 			if (strlen(inputline) > 0) {
 				insertdisk(0, inputline);
 			} else {
@@ -113,18 +116,20 @@ void *runconsole (void *dummy) {
 			}
 		} else if (strcmpi(inputline, "change fd1") == 0) {
 			printf("Path to new image file: ");
-			waitforcmd(inputline, sizeof(inputline) );
+			waitforcmd(inputline, sizeof(inputline));
 			if (strlen(inputline) > 0) {
-				insertdisk (1,inputline);
+				insertdisk(1,inputline);
 			} else {
-				ejectdisk (1);
-				printf ("Floppy image ejected from second drive.\n");
+				ejectdisk(1);
+				printf("Floppy image ejected from second drive.\n");
 			}
 		} else if (strcmpi(inputline, "help") == 0) {
-			consolehelp ();
+			consolehelp();
 		} else if (strcmpi(inputline, "quit") == 0) {
 			running = 0;
-		} else printf("Invalid command was entered.\n");
+		} else {
+			printf("Invalid command was entered.\n");
+		}
 	}
 #ifndef _WIN32
 	return NULL;

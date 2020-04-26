@@ -27,12 +27,14 @@
 #include "i8253.h"
 #include "mutex.h"
 
-extern void set_port_write_redirector (uint16_t startport, uint16_t endport, void *callback);
-extern void set_port_read_redirector (uint16_t startport, uint16_t endport, void *callback);
+#include "externs.h"
+
+//extern void set_port_write_redirector (uint16_t startport, uint16_t endport, void *callback);
+//extern void set_port_read_redirector (uint16_t startport, uint16_t endport, void *callback);
 
 struct i8253_s i8253;
 
-extern uint64_t hostfreq, lasttick, curtick, tickgap, totalexec;
+//extern uint64_t hostfreq, lasttick, curtick, tickgap, totalexec;
 
 void out8253 (uint16_t portnum, uint8_t value) {
 	uint8_t curbyte = 0; // make gcc happy to have initialized variable :)

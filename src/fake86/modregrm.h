@@ -1,11 +1,9 @@
+#ifndef FAKE86_MODREGRM_H_INCLUDED
+#define FAKE86_MODREGRM_H_INCLUDED
+
 #include "config.h"
 
 #ifdef CPU_ADDR_MODE_CACHE
-struct addrmodecache_s addrcache[0x100000];
-uint8_t addrcachevalid[0x100000];
-
-uint32_t addrdatalen, dataisvalid, setvalidptr;
-uint64_t cached_access_count = 0, uncached_access_count = 0;
 #define modregrm() { \
 	tempaddr32 = (((uint32_t)savecs << 4) + ip) & 0xFFFFF; \
 	if (addrcachevalid[tempaddr32]) { \
@@ -126,4 +124,6 @@ uint64_t cached_access_count = 0, uncached_access_count = 0;
 	disp16 = 0; \
 	} \
 }
+#endif
+
 #endif

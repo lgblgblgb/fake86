@@ -24,12 +24,14 @@
 #include "disk.h"
 #include "cpu.h"
 
-extern uint8_t RAM[0x100000], cf, hdcount;
-extern uint16_t segregs[4];
-extern union _bytewordregs_ regs;
+#include "externs.h"
 
-extern uint8_t read86 (uint32_t addr32);
-extern void write86 (uint32_t addr32, uint8_t value);
+//extern uint8_t RAM[0x100000], cf, hdcount;
+//extern uint16_t segregs[4];
+//extern union _bytewordregs_ regs;
+
+//extern uint8_t read86 (uint32_t addr32);
+//extern void write86 (uint32_t addr32, uint8_t value);
 
 struct struct_drive disk[256];
 uint8_t sectorbuffer[512];

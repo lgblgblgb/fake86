@@ -33,8 +33,11 @@
 #define PCAP_OPENFLAG_PROMISCUOUS 1
 #endif
 
-extern uint8_t RAM[0x100000];
-extern uint8_t verbose;
+#include "externs.h"
+
+
+//extern uint8_t RAM[0x100000];
+//extern uint8_t verbose;
 uint8_t ethif, net_enabled = 0;
 uint8_t dopktrecv = 0;
 uint16_t rcvseg, rcvoff, hdrlen, handpkt;
@@ -126,8 +129,8 @@ void setmac(void) {
 }
 
 #ifndef NETWORKING_OLDCARD
-extern int ne2000_can_receive(void);
-extern void ne2000_receive (const uint8_t *buf, int size);
+//extern int ne2000_can_receive(void);
+//extern void ne2000_receive (const uint8_t *buf, int size);
 
 uint8_t newrecv[5000];
 
@@ -155,13 +158,13 @@ void sendpkt (uint8_t *src, uint16_t len) {
 	pcap_sendpacket (adhandle, src, len);
 }
 #else
-extern struct netstruct {
-	uint8_t enabled;
-	uint8_t canrecv;
-	uint16_t pktlen;
-} net;
+//extern struct netstruct {
+//	uint8_t enabled;
+//	uint8_t canrecv;
+//	uint16_t pktlen;
+//} net;
 
-extern void doirq (uint8_t irqnum);
+//extern void doirq (uint8_t irqnum);
 
 void dispatch(void) {
 	if (pcap_next_ex (adhandle, &hdr, &pktdata) <=0) return;

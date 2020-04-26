@@ -17,6 +17,9 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#ifndef FAKE86_DISK_H_INCLUDED
+#define FAKE86_DISK_H_INCLUDED
+
 #include <stdint.h>
 #include <stdio.h>
 
@@ -29,3 +32,6 @@ struct struct_drive {
 	uint8_t inserted;
 	char *filename;
 };
+extern struct struct_drive disk[256];
+
+#endif
