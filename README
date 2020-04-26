@@ -4,7 +4,19 @@ Copyright (C)2020      Gabor Lenart "LGB"
 
 Fake86+: Please note, that this is not the original Fake86.
 It's under heavy refactoring by me (LGB). Currently it's already
-SDL2 instead of SDL. More changes will come ...
+ported to SDL2, with many souce clean-up and reorganization, and
+a more mature build system.
+
+However please note, that my main focus is on UNIX and UNIX-like
+OSes, so I can't care about the Windows version too much (I don't
+even have Windows!) though I can build it with my new Makefile
+using Mingw cross-compiler running on Linux to generate Windows
+executable :) You can try the same even with Windows by using
+WSL, or maybe natively by installing Mingw in the form of MSYS
+on your Windows.
+
+Other than that, it's my fork, my rules + goals, maybe not so
+popular among other people, I can admit, for sure!
 
 ===============================================================================
 

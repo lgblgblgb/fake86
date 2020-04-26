@@ -52,6 +52,7 @@ static int32_t audbufptr, usebuffersize;
 int32_t usesamplerate = AUDIO_DEFAULT_SAMPLE_RATE;
 int32_t latency = AUDIO_DEFAULT_LATENCY;
 
+#if 0
 static inline void putmemstr ( uint8_t *dest, const char *str )
 {
 	while (*str) {
@@ -59,7 +60,6 @@ static inline void putmemstr ( uint8_t *dest, const char *str )
 	}
 }
 
-#if 0
 static void create_output_wav (const char *filename) {
 	printf ("Creating %s for audio logging... ", filename);
 	wav_file = fopen (filename, "wb");

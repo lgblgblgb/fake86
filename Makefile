@@ -1,10 +1,12 @@
 CC		= gcc
 CC_WIN		= x86_64-w64-mingw32-gcc
+WINDRES		= x86_64-w64-mingw32-windres
+STRIP		= strip
+STRIP_WIN	= x86_64-w64-mingw32-strip
 SRCFILES	= $(wildcard src/*.c)
 OBJFILES	= $(addprefix bin/objs/, $(notdir $(SRCFILES:.c=.o)))
 SRCFILES_WIN	= $(wildcard src/win32/*.c) $(SRCFILES)
-OBJFILES_WIN	= $(addprefix bin/objs-win/, $(notdir $(SRCFILES_WIN:.c=.o)))
-#HEADERS		= $(wildcard src/*.h)
+OBJFILES_WIN	= $(addprefix bin/objs-win/, $(notdir $(SRCFILES_WIN:.c=.o))) bin/objs-win/windres.o
 BINPATH		= /usr/local/bin
 DATAPATH	= /usr/local/share/fake86
 CFLAGS		= -std=c11 -Ofast -Wall -pipe -DPATH_DATAFILES=\"$(DATAPATH)/\" -D_DEFAULT_SOURCE
@@ -14,22 +16,27 @@ GENFLAGS_WIN	= -fno-common
 INCLUDE		= -Isrc
 LIBS		= -lpthread -lX11
 LIBS_WIN	=
-#SDLFLAGS	= $(shell sdl2-config --cflags --libs)
 SDL_CFLAGS	= $(shell sdl2-config --cflags)
 SDL_LIBS	= $(shell sdl2-config --libs)
-#SDLFLAGS_WIN	= $(shell x86_64-w64-mingw32-sdl2-config --cflags --libs)
 SDL_CFLAGS_WIN  = $(shell x86_64-w64-mingw32-sdl2-config --cflags)
 SDL_LIBS_WIN	= $(shell x86_64-w64-mingw32-sdl2-config --libs)
 BIN_FAKE86	= bin/fake86
 BIN_IMAGEGEN	= bin/fake86-imagegen
 BINS		= $(BIN_FAKE86) $(BIN_IMAGEGEN)
+BINS_WIN	= $(BIN_FAKE86).exe $(BIN_IMAGEGEN).exe
 DLL_SOURCE	= $(shell x86_64-w64-mingw32-sdl2-config --prefix)/bin/SDL2.dll
 DLL_TARGET	= bin/SDL2.dll
 ALLDEP		=
+DEPFILE		= bin/objs/.depend
+DEPFILE_WIN	= bin/objs-win/.depend
 
-all: $(BINS)
+all:
+	$(MAKE) $(DEPFILE)
+	$(MAKE) $(BINS)
 
-winall: $(BIN_FAKE86).exe $(BIN_IMAGEGEN).exe
+winall:
+	$(MAKE) $(DEPFILE_WIN)
+	$(MAKE) $(BINS_WIN)
 
 clangstricttest:
 	clang $(SRCFILES) -o $(BIN_FAKE86) $(CFLAGS) $(GENFLAGS) -Weverything $(INCLUDE) $(LIBS) $(SDL_CFLAGS) $(SDL_LIBS)
@@ -39,20 +46,16 @@ clangstricttest:
 bin/objs/%.o: src/%.c $(ALLDEP)
 	$(CC) $(CFLAGS) $(GENFLAGS) $(INCLUDE) $(SDL_CFLAGS) -o $@ -c $<
 
+bin/objs-win/windres.o: src/win32/rc/fake86.rc
+	$(WINDRES) $< -O coff -o $@
+
 bin/objs-win/%.o: src/%.c $(ALLDEP)
 	$(CC_WIN) $(CFLAGS_WIN) $(GENFLAGS_WIN) $(INCLUDE) $(SDL_CFLAGS_WIN) -o $@ -c $<
-bin/objs-win/menus.o: src/win32/menus.c $(ALLDEP)
+bin/objs-win/%.o: src/win32/%.c $(ALLDEP)
 	$(CC_WIN) $(CFLAGS_WIN) $(GENFLAGS_WIN) $(INCLUDE) $(SDL_CFLAGS_WIN) -o $@ -c $<
-
-#$(BIN_FAKE86): $(SRCFILES) $(HEADERS)
-#	$(CC) $(SRCFILES) -o $@ $(CFLAGS) $(INCLUDE) $(LIBS) $(SDLFLAGS)
 
 $(BIN_FAKE86): $(OBJFILES) $(ALLDEP)
 	$(CC) $(GENFLAGS) -o $@ $(OBJFILES) $(LIBS) $(SDL_LIBS)
-
-#$(BIN_FAKE86).exe: $(SRCFILES) $(SRCFILES_PWIN) $(HEADERS)
-#	$(CC_WIN) $(SRCFILES) $(SRCFILES_PWIN) -o $@ $(CFLAGS_WIN) $(INCLUDE) $(LIBS_WIN) $(SDLFLAGS_WIN)
-#	$(MAKE) $(DLL_TARGET)
 
 $(BIN_FAKE86).exe: $(OBJFILES_WIN) $(ALLDEP)
 	$(CC_WIN) $(GENFLAGS_WIN) -o $@ $(OBJFILES_WIN) $(LIBS_WIN) $(SDL_LIBS_WIN)
@@ -75,13 +78,42 @@ wintest: $(BIN_FAKE86).exe $(DLL_TARGET)
 
 install: $(BINS)
 	mkdir -p $(BINPATH) $(DATAPATH)
+	$(STRIP) $(BINS)
 	cp $(BINS) $(BINPATH)/
-	cp data/asciivga.dat data/pcxtbios.bin data/videorom.bin data/rombasic.bin $(DATAPATH)/
+	cp bin/data/asciivga.dat bin/data/pcxtbios.bin bin/data/videorom.bin bin/data/rombasic.bin $(DATAPATH)/
 
 clean:
-	rm -f src/*.o src/imagegen/*.o $(BINS) $(BIN_FAKE86).exe $(BIN_IMAGEGEN).exe $(DLL_TARGET) bin/objs/*.o bin/objs-win/*.o
+	rm -f src/*.o src/imagegen/*.o $(BINS) $(BINS_WIN) $(DLL_TARGET) bin/objs/*.o bin/objs-win/*.o $(DEPFILE) $(DEPFILE_WIN)
 
 uninstall:
 	rm -f $(BINPATH)/fake86 $(BINPATH)/imagegen
 
-.PHONY: all winall test wintest install clean clean uninstall clangstricttest
+strip:
+	@test -f $(BIN_FAKE86) && $(STRIP) $(BIN_FAKE86) || echo "Not found: $(BIN_FAKE86)"
+	@test -f $(BIN_FAKE86).exe && $(STRIP_WIN) $(BIN_FAKE86).exe || echo "Not found: $(BIN_FAKE86).exe"
+	@test -f $(BIN_IMAGEGEN) && $(STRIP) $(BIN_IMAGEGEN) || echo "Not found: $(BIN_IMAGEGEN)"
+	@test -f $(BIN_IMAGEGEN).exe && $(STRIP_WIN) $(BIN_IMAGEGEN).exe || echo "Not found: $(BIN_IMAGEGEN).exe"
+
+$(DEPFILE): $(SRCFILES)
+	$(CC) -MM $(CFLAGS) $(GENFLAGS) $(INCLUDE) $(SDL_CFLAGS) $(SRCFILES) | sed -E 's/^([^: ]+.o):/bin\/objs\/\0/' > $@
+$(DEPFILE_WIN): $(SRCFILES_WIN)
+	$(CC_WIN) -MM $(CFLAGS_WIN) $(GENFLAGS_WIN) $(INCLUDE) $(SDL_CFLAGS_WIN) $(SRCFILES_WIN) | sed -E 's/^([^: ]+.o):/bin\/objs-win\/\0/' > $@
+
+installsdl2win:
+	bin/tools/install-cross-win-mingw-sdl-on-linux.sh /usr/local/bin
+
+dep:
+	rm -f $(DEPFILE)
+	$(MAKE) $(DEPFILE)
+windep:
+	rm -f $(DEPFILE_WIN)
+	$(MAKE) $(DEPFILE_WIN)
+
+.PHONY: all winall clangstricttest test wintest install clean uninstall strip installsdl2win dep windep
+
+ifneq ($(wildcard $(DEPFILE)),)
+include $(DEPFILE)
+endif
+ifneq ($(wildcard $(DEPFILE_WIN)),)
+include $(DEPFILE_WIN)
+endif

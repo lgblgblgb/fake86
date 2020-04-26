@@ -1,0 +1,119 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MENU1 MENU
+BEGIN
+    POPUP "File"
+    BEGIN
+        MENUITEM "E&xit",                       ID_FILE_EXIT
+    END
+    POPUP "Emulation"
+    BEGIN
+        MENUITEM "Hard &reset emulator",        ID_EMULATION_HARDRESETEMULATOR
+    END
+    POPUP "Drives"
+    BEGIN
+        POPUP "Floppy 0"
+        BEGIN
+            MENUITEM "Insert disk...",              ID_FLOPPY0_INSERTDISK
+            MENUITEM "Eject disk",                  ID_FLOPPY0_EJECTDISK
+        END
+        POPUP "Floppy 1"
+        BEGIN
+            MENUITEM "Insert disk...",              ID_FLOPPY1_INSERTDISK
+            MENUITEM "Eject disk",                  ID_FLOPPY1_EJECTDISK
+        END
+        POPUP "Hard drive 0"
+        BEGIN
+            MENUITEM "Insert disk...",              ID_HARDDRIVE0_INSERTDISK
+            MENUITEM "Eject disk",                  ID_HARDDRIVE0_EJECTDISK
+        END
+        POPUP "Hard drive 1"
+        BEGIN
+            MENUITEM "Insert disk...",              ID_HARDDRIVE1_INSERTDISK
+            MENUITEM "Eject disk",                  ID_HARDDRIVE1_EJECTDISK
+        END
+        MENUITEM SEPARATOR
+        POPUP "Set boot drive"
+        BEGIN
+            MENUITEM "Floppy 0",                    ID_SETBOOTDRIVE_FLOPPY0
+            MENUITEM "Hard drive 0",                ID_SETBOOTDRIVE_HARDDRIVE0
+        END
+    END
+    POPUP "Video"
+    BEGIN
+        POPUP "Window resolution"
+        BEGIN
+            MENUITEM "Automatic",                   ID_WINDOWRESOLUTION_AUTOMATIC
+            MENUITEM SEPARATOR
+            MENUITEM "320x200",                     ID_WINDOWRESOLUTION_320X200
+            MENUITEM "640x400",                     ID_WINDOWRESOLUTION_640X400
+            MENUITEM "960x600",                     ID_WINDOWRESOLUTION_960X600
+            MENUITEM "1280x800",                    ID_WINDOWRESOLUTION_1280X800
+        END
+    END
+END
+
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

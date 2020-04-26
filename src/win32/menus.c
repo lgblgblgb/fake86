@@ -19,7 +19,7 @@
 */
 
 #include "../config.h"
-#include "../../win32/resource.h"
+#include "rc/resource.h"
 #include <windows.h>
 #include <SDL.h>
 #include <SDL_syswm.h>
