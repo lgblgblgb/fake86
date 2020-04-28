@@ -22,6 +22,6 @@
 #define FAKE86_SPEAKER_H_INCLUDED
 
 extern uint8_t speakerenabled;
-extern int16_t speakergensample(void);
+extern int16_t speakergensample ( void );
 
 #endif

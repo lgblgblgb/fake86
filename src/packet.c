@@ -33,24 +33,31 @@ uint8_t ethif;
 #include <stdlib.h>
 #include <memory.h>
 
+#include "cpu.h"
+#include "main.h"
+#include "i8259.h"
+#include "netcard.h"
+
 #ifndef _WIN32
+#ifndef PCAP_OPENFLAG_PROMISCUOUS
 #define PCAP_OPENFLAG_PROMISCUOUS 1
+#endif
 #endif
 
 
 uint8_t net_enabled = 0;
-uint8_t dopktrecv = 0;
-uint16_t rcvseg, rcvoff, hdrlen, handpkt;
+static uint8_t dopktrecv = 0;
+static uint16_t rcvseg, rcvoff, hdrlen, handpkt;
 
-pcap_if_t *alldevs;
-pcap_if_t *d;
-pcap_t *adhandle;
-const u_char *pktdata;
-struct pcap_pkthdr *hdr;
-int inum;
-uint16_t curhandle = 0;
-char errbuf[PCAP_ERRBUF_SIZE];
-uint8_t maclocal[6] = { 0xDE, 0xAD, 0xBE, 0xEF, 0x13, 0x37 };
+static pcap_if_t *alldevs;
+static pcap_if_t *d;
+static pcap_t *adhandle;
+static const u_char *pktdata;
+static struct pcap_pkthdr *hdr;
+static int inum;
+static uint16_t curhandle = 0;
+static char errbuf[PCAP_ERRBUF_SIZE];
+static uint8_t maclocal[6] = { 0xDE, 0xAD, 0xBE, 0xEF, 0x13, 0x37 };
 
 void initpcap(void) {
 	int i=0;
@@ -124,8 +131,8 @@ void initpcap(void) {
 	net_enabled = 1;
 }
 
-void setmac(void) {
-	memcpy (&RAM[0xE0000], &maclocal[0], 6);
+static void setmac(void) {
+	memcpy(&RAM[0xE0000], &maclocal[0], 6);
 }
 
 #ifndef NETWORKING_OLDCARD

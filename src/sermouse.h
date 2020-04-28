@@ -29,8 +29,7 @@ struct sermouse_s {
 	int8_t bufptr;
 };
 
-extern void bufsermousedata (uint8_t value);
-extern void sermouseevent (uint8_t buttons, int8_t xrel, int8_t yrel);
-extern void initsermouse (uint16_t baseport, uint8_t irq);
+extern void sermouseevent ( uint8_t buttons, int8_t xrel, int8_t yrel );
+extern void initsermouse  ( uint16_t baseport, uint8_t irq );
 
 #endif

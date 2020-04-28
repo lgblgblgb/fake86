@@ -140,7 +140,7 @@
 	break; \
  \
 	default: \
-	disp8 = 0; \
+	/* disp8 = 0; <-- this seems not to be used ever! */ \
 	disp16 = 0; \
 	} \
 }

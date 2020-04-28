@@ -23,11 +23,13 @@
 
 #include <stdint.h>
 
-extern struct netstruct {                                                                                                                                                                                            
+struct netstruct {
         uint8_t enabled;
         uint8_t canrecv;
         uint16_t pktlen;
-} net;
+};
+
+extern struct netstruct net;
 
 extern void nethandler ( void );
 

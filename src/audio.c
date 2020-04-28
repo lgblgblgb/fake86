@@ -104,22 +104,30 @@ static void savepic(void) {
 static int8_t samps[2400];
 #endif
 
-uint8_t audiobufferfilled(void) {
+uint8_t audiobufferfilled(void)
+{
 	if (audbufptr >= usebuffersize) return(1);
-	return(0);
+	return 0;
 }
+
 
 void tickaudio(void) {
 	int16_t sample;
-	if (audbufptr >= usebuffersize) return;
+	if (audbufptr >= usebuffersize)
+		return;
 	sample = adlibgensample() >> 4;
-	if (usessource) sample += getssourcebyte();
+	if (usessource)
+		sample += getssourcebyte();
 	sample += getBlasterSample();
-	if (speakerenabled) sample += (speakergensample() >> 1);
-	if (audbufptr < sizeof(audbuf) ) audbuf[audbufptr++] = (uint8_t) ((uint16_t) sample+128);
+	if (speakerenabled)
+		sample += (speakergensample() >> 1);
+	if (audbufptr < sizeof(audbuf))
+		audbuf[audbufptr++] = (uint8_t)((uint16_t)sample+128);
 }
 
-static void fill_audio (void *udata, int8_t *stream, int len) {
+
+static void fill_audio ( void *udata, int8_t *stream, int len )
+{
 	memcpy (stream, audbuf, len);
 	memmove (audbuf, &audbuf[len], usebuffersize - len);
 
@@ -127,45 +135,48 @@ static void fill_audio (void *udata, int8_t *stream, int len) {
 	if (audbufptr < 0) audbufptr = 0;
 }
 
-void initaudio(void) {
-	printf ("Initializing audio stream... ");
 
-	if (usesamplerate < 4000) usesamplerate = 4000;
-	else if (usesamplerate > 96000) usesamplerate = 96000;
-	if (latency < 10) latency = 10;
-	else if (latency > 1000) latency = 1000;
+void initaudio ( void )
+{
+	printf ("Initializing audio stream... ");
+	if (usesamplerate < 4000)
+		usesamplerate = 4000;
+	else if (usesamplerate > 96000)
+		usesamplerate = 96000;
+	if (latency < 10)
+		latency = 10;
+	else if (latency > 1000)
+		latency = 1000;
 	audbufptr = usebuffersize = (usesamplerate / 1000) * latency;
 	gensamplerate = usesamplerate;
-	doublesamplecount = (uint32_t) ( (double) usesamplerate * (double) 0.01);
-
+	doublesamplecount = (uint32_t) ((double)usesamplerate * (double)0.01);
 	wanted.freq = usesamplerate;
 	wanted.format = AUDIO_U8;
 	wanted.channels = 1;
 	wanted.samples = (uint16_t) usebuffersize >> 1;
-	wanted.callback = (void *) fill_audio;
+	wanted.callback = (void*)fill_audio;
 	wanted.userdata = NULL;
-
 	if (SDL_OpenAudio (&wanted, NULL) <0) {
-			printf ("Error: %s\n", SDL_GetError() );
-			return;
-		}
-	else {
-			printf ("OK! (%lu Hz, %lu ms, %lu sample latency)\n", (long unsigned int)usesamplerate, (long unsigned int)latency, (long unsigned int)usebuffersize);
-		}
-
-	memset (audbuf, 128, sizeof (audbuf) );
+		printf ("Error: %s\n", SDL_GetError());
+		return;
+	} else {
+		printf ("OK! (%lu Hz, %lu ms, %lu sample latency)\n", (long unsigned int)usesamplerate, (long unsigned int)latency, (long unsigned int)usebuffersize);
+	}
+	memset(audbuf, 128, sizeof(audbuf));
 	audbufptr = usebuffersize;
 	//create_output_wav("fake86.wav");
-	SDL_PauseAudio (0);
+	SDL_PauseAudio(0);
 	return;
 }
 
-void killaudio(void) {
-	SDL_PauseAudio (1);
 
-	if (wav_file == NULL) return;
+void killaudio ( void )
+{
+	SDL_PauseAudio (1);
+	if (wav_file == NULL)
+		return;
 	wav_hdr.ChunkSize = wav_hdr.Subchunk2Size + sizeof(wav_hdr) - 8;
 	fseek(wav_file, 0, SEEK_SET);
-	fwrite((void *)&wav_hdr, 1, sizeof(wav_hdr), wav_file);
+	fwrite((void*)&wav_hdr, 1, sizeof(wav_hdr), wav_file);
 	fclose (wav_file);
 }

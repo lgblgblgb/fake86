@@ -73,6 +73,13 @@ uint8_t verbose = 0, cgaonly = 0, useconsole = 0;
 char *biosfile = NULL;
 uint32_t speed = 0;
 
+#ifdef DO_NOT_FORCE_UNREACHABLE
+void UNREACHABLE_FATAL_ERROR ( void )
+{
+	fprintf(stderr, "FATAL: Code point hit marked as 'unreachable'!!\n");
+	exit(1);
+}
+#endif
 
 static uint32_t loadbinary (uint32_t addr32, const char *filename, uint8_t roflag)
 {

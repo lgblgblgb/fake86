@@ -31,54 +31,69 @@
 static uint8_t ssourcebuf[16], ssourceptr = 0, ssourceactive = 0;
 static int16_t ssourcecursample = 0;
 
-int16_t getssourcebyte(void) {
-	return (ssourcecursample);
+
+int16_t getssourcebyte( void )
+{
+	return ssourcecursample;
 }
 
-void tickssource(void) {
-	uint8_t rotatefifo;
-	if ( (ssourceptr==0) || (!ssourceactive) ) {
-			ssourcecursample = 0;
-			return;
-		}
+
+void tickssource( void )
+{
+	if ((ssourceptr == 0) || (!ssourceactive)) {
+		ssourcecursample = 0;
+		return;
+	}
 	ssourcecursample = ssourcebuf[0];
-	for (rotatefifo=1; rotatefifo<16; rotatefifo++)
-		ssourcebuf[rotatefifo-1] = ssourcebuf[rotatefifo];
+	for (int rotatefifo = 1; rotatefifo < 16; rotatefifo++)
+		ssourcebuf[rotatefifo - 1] = ssourcebuf[rotatefifo];
 	ssourceptr--;
 	portram[0x379] = 0;
 }
 
-void putssourcebyte (uint8_t value) {
-	if (ssourceptr==16) return;
+
+static void putssourcebyte ( uint8_t value )
+{
+	if (ssourceptr == 16)
+		return;
 	ssourcebuf[ssourceptr++] = value;
-	if (ssourceptr==16) portram[0x379] = 0x40;
+	if (ssourceptr == 16)
+		portram[0x379] = 0x40;
 }
 
-uint8_t ssourcefull(void) {
-	if (ssourceptr==16) return (0x40);
-	else return (0x00);
+
+static inline uint8_t ssourcefull ( void )
+{
+	return (ssourceptr == 16) ? 0x40 : 0x00;
 }
 
-void outsoundsource (uint16_t portnum, uint8_t value) {
+
+static void outsoundsource ( uint16_t portnum, uint8_t value )
+{
 	static uint8_t last37a = 0;
 	switch (portnum) {
-			case 0x378:
-				putssourcebyte (value);
-				break;
-			case 0x37A:
-				if ( (value & 4) && ! (last37a & 4) ) putssourcebyte (portram[0x378]);
-				last37a = value;
-				break;
-		}
+		case 0x378:
+			putssourcebyte(value);
+			break;
+		case 0x37A:
+			if ((value & 4) && !(last37a & 4))
+				putssourcebyte(portram[0x378]);
+			last37a = value;
+			break;
+	}
 }
 
-uint8_t insoundsource (uint16_t portnum) {
+
+static uint8_t insoundsource ( uint16_t portnum )
+{
 	return ssourcefull();
 }
 
-void initsoundsource(void) {
-	set_port_write_redirector (0x378, 0x378, &outsoundsource);
-	set_port_write_redirector (0x37A, 0x37A, &outsoundsource);
-	set_port_read_redirector (0x379, 0x379, &insoundsource);
+
+void initsoundsource( void )
+{
+	set_port_write_redirector(0x378, 0x378, &outsoundsource);
+	set_port_write_redirector(0x37A, 0x37A, &outsoundsource);
+	set_port_read_redirector(0x379, 0x379, &insoundsource);
 	ssourceactive = 1;
 }

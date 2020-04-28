@@ -21,8 +21,8 @@
 #ifndef FAKE86_SNDSOURCE_H_INCLUDED
 #define FAKE86_SNDSOURCE_H_INCLUDED
 
-extern int16_t getssourcebyte ( void );
-extern void tickssource ( void );
-extern void initsoundsource ( void );
+extern int16_t	getssourcebyte	( void );
+extern void	tickssource	( void );
+extern void	initsoundsource	( void );
 
 #endif

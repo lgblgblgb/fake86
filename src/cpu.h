@@ -21,6 +21,8 @@
 #ifndef FAKE86_CPU_H_INCLUDED
 #define FAKE86_CPU_H_INCLUDED
 
+#include <stdint.h>
+
 #include "config.h"
 #ifdef CPU_ADDR_MODE_CACHE
 extern uint64_t cached_access_count, uncached_access_count;
@@ -86,6 +88,7 @@ struct addrmodecache_s {
 };
 #endif
 
+#if 0
 #define StepIP(x)	ip += (x)
 #define getmem8(x, y)	read86(segbase(x) + (y))
 #define getmem16(x, y)	readw86(segbase(x) + (y))
@@ -95,18 +98,27 @@ struct addrmodecache_s {
 #define signext32(value)	(int32_t)(int16_t)(value)
 #define getreg16(regid)	regs.wordregs[regid]
 #define getreg8(regid)	regs.byteregs[byteregtable[regid]]
-#define putreg16(regid, writeval)	regs.wordregs[regid] = writeval
-#define putreg8(regid, writeval)	regs.byteregs[byteregtable[regid]] = writeval
+#define setreg16(regid, writeval)	regs.wordregs[regid] = writeval
+#define setreg8(regid, writeval)	regs.byteregs[byteregtable[regid]] = writeval
 #define getsegreg(regid)	segregs[regid]
 #define putsegreg(regid, writeval)	segregs[regid] = writeval
 #define segbase(x)	((uint32_t)(x) << 4)
+#endif
 
+#define getreg16(regid)			regs.wordregs[regid]
+#define getreg8(regid)			regs.byteregs[byteregtable[regid]]
+#define setreg16(regid, writeval)	regs.wordregs[regid] = (writeval)
+#define setreg8(regid, writeval)	regs.byteregs[byteregtable[regid]] = (writeval)
+
+#if 0
 #define makeflagsword() \
 	( \
 	2 | (uint16_t) cf | ((uint16_t) pf << 2) | ((uint16_t) af << 4) | ((uint16_t) zf << 6) | ((uint16_t) sf << 7) | \
 	((uint16_t) tf << 8) | ((uint16_t) ifl << 9) | ((uint16_t) df << 10) | ((uint16_t) of << 11) \
 	)
 
+#endif
+#if 0
 #define decodeflagsword(x) { \
 	temp16 = x; \
 	cf = temp16 & 1; \
@@ -119,7 +131,7 @@ struct addrmodecache_s {
 	df = (temp16 >> 10) & 1; \
 	of = (temp16 >> 11) & 1; \
 	}
-
+#endif
 
 extern uint8_t portram[0x10000];
 extern uint8_t RAM[0x100000];

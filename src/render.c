@@ -67,7 +67,8 @@ static SDL_Texture  *sdl_tex = NULL;
 SDL_PixelFormat *sdl_pixfmt = NULL;
 
 
-void setwindowtitle ( const char *extra ) {
+void setwindowtitle ( const char *extra )
+{
 	char temptext[256];
 	sprintf(temptext, "%s%s", windowtitle, extra ? extra : "");
 	SDL_SetWindowTitle(sdl_win, temptext);
@@ -242,6 +243,7 @@ static struct {
 	uint32_t	*pix;
 } pia;
 
+
 static uint32_t *start_pixel_access ( int nw, int nh )
 {
 	pia.rect.x = 0;
@@ -269,7 +271,8 @@ static uint32_t *start_pixel_access ( int nw, int nh )
 }
 
 
-static void draw (void) {
+static void draw ( void )
+{
 	uint32_t planemode, vgapage, color, chary, charx, vidptr, divx, divy, curchar, curpixel, usepal, intensity, blockw, curheight;
 	//x1, y1;
 	// Nice. Now time to render madness.

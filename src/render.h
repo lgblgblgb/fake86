@@ -23,16 +23,17 @@
 
 #include <SDL.h>
 
-extern SDL_PixelFormat *sdl_pixfmt;
-extern SDL_Window *sdl_win;
-extern uint8_t renderbenchmark;
-extern uint8_t scrmodechange;
-extern uint32_t framedelay;
-extern uint64_t totalframes;
-extern uint8_t noscale, nosmooth;
+extern SDL_PixelFormat	*sdl_pixfmt;
+extern SDL_Window	*sdl_win;
 
-extern int initscreen ( const char *ver );
-extern void setwindowtitle ( const char *extra );
-extern void doscrmodechange ( void );
+extern uint8_t	renderbenchmark;
+extern uint8_t	scrmodechange;
+extern uint32_t	framedelay;
+extern uint64_t	totalframes;
+extern uint8_t	noscale, nosmooth;
+
+extern int	initscreen	( const char *ver   );
+extern void	setwindowtitle	( const char *extra );
+extern void	doscrmodechange	( void );
 
 #endif

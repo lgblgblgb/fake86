@@ -173,7 +173,7 @@ void handleinput ( void )
 				if (translated_key >= 0) {
 					portram[0x60] = translated_key;
 					portram[0x64] |= 2;
-					doirq (1);
+					doirq(1);
 					//printf("%02X\n", translatescancode(event.key.keysym.sym));
 					keydown[translated_key] = 1;
 					if (keydown[0x38] && keydown[0x1D] && (SDL_GetRelativeMouseMode() == SDL_TRUE)) {

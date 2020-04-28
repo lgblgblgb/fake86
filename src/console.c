@@ -38,18 +38,17 @@
 #include "disk.h"
 #include "cpu.h"
 
-static char inputline[1024];
 
-static void waitforcmd (char *dst, uint16_t maxlen) {
+static void waitforcmd ( char *dst, uint16_t maxlen, const char *ans_on_fail )
+{
 #ifdef _WIN32
 	uint16_t inputptr;
-	uint8_t cc;
 	inputptr = 0;
 	maxlen -= 2;
-	inputline[0] = 0;
+	dst[0] = 0;
 	while (running) {
 		if (_kbhit() ) {
-			cc = (uint8_t)_getch();
+			uint8_t cc = (uint8_t)_getch();
 			switch (cc) {
 				case 0:
 				case 9:
@@ -58,7 +57,7 @@ static void waitforcmd (char *dst, uint16_t maxlen) {
 				case 8: //backspace
 					if (inputptr > 0) {
 						printf("%c %c", 8, 8);
-						inputline[--inputptr] = 0;
+						dst[--inputptr] = 0;
 					}
 					break;
 				case 13: //enter
@@ -66,8 +65,8 @@ static void waitforcmd (char *dst, uint16_t maxlen) {
 					return;
 				default:
 					if (inputptr < maxlen) {
-						inputline[inputptr++] = cc;
-						inputline[inputptr] = 0;
+						dst[inputptr++] = cc;
+						dst[inputptr] = 0;
 						printf("%c",cc);
 					}
 					break;
@@ -77,58 +76,79 @@ static void waitforcmd (char *dst, uint16_t maxlen) {
 	}
 #else
 	//gets (dst);
-	if (!fgets(dst, maxlen, stdin))
-		dst[0] = '\0';
+	if (!fgets(dst, maxlen, stdin)) {
+		if (ans_on_fail) {
+			puts(ans_on_fail);
+			strcpy(dst, ans_on_fail);
+		} else {
+			puts("");
+			dst[0] = 0;
+		}
+	} else {
+		for (char *p = dst ;; p++)
+			if (*p < 0x20) {
+				*p = 0;
+				break;
+			}
+	}
 #endif
 }
 
-static void consolehelp (void) {
-	printf("\nConsole command summary:\n");
-	printf("  The console is not very robust yet. There are only a few commands:\n\n");
-	printf("    change fd0        Mount a new image file on first floppy drive.\n");
-	printf("                      Entering a blank line just ejects any current image file.\n");
-	printf("    change fd1        Mount a new image file on first floppy drive.\n");
-	printf("                      Entering a blank line just ejects any current image file.\n");
-	printf("    help              This help display.\n");
-	printf("    quit              Immediately abort emulation and close Fake86.\n");
+
+static inline void consolehelp ( void ) {
+	puts(
+		"Console command summary:\n"
+		"  The console is not very robust yet. There are only a few commands:\n\n"
+		"    change fd0        Mount a new image file on first floppy drive.\n"
+		"                      Entering a blank line just ejects any current image file.\n"
+		"    change fd1        Mount a new image file on first floppy drive.\n"
+		"                      Entering a blank line just ejects any current image file.\n"
+		"    help              This help display.\n"
+		"    quit              Immediately abort emulation and quit Fake86."
+	);
 }
+
 
 #ifdef _WIN32
-void runconsole (void *dummy) {
+void  runconsole ( void *dummy ) {
 #else
-void *runconsole (void *dummy) {
+void *runconsole ( void *dummy ) {
 #endif
-	printf ("\nFake86 management console\n");
-	printf ("Type \"help\" for a summary of commands.\n");
+	char inputline[1024];
+	puts("\nFake86 management console\nType \"help\" for a summary of commands.");
 	while (running) {
-		printf("\n>");
-		waitforcmd(inputline, sizeof(inputline));
-		if (strcmpi(inputline, "change fd0") == 0) {
+		printf(">");
+		waitforcmd(inputline, sizeof(inputline), "close");
+		if (!strcmpi(inputline, "change fd0")) {
 			printf("Path to new image file: ");
-			waitforcmd(inputline, sizeof(inputline));
+			waitforcmd(inputline, sizeof(inputline), NULL);
 			if (strlen(inputline) > 0) {
 				insertdisk(0, inputline);
 			} else {
 				ejectdisk(0);
-				printf("Floppy image ejected from first drive.\n");
+				puts("Floppy image ejected from first drive.");
 			}
-		} else if (strcmpi(inputline, "change fd1") == 0) {
+		} else if (!strcmpi(inputline, "change fd1")) {
 			printf("Path to new image file: ");
-			waitforcmd(inputline, sizeof(inputline));
+			waitforcmd(inputline, sizeof(inputline), NULL);
 			if (strlen(inputline) > 0) {
-				insertdisk(1,inputline);
+				insertdisk(1, inputline);
 			} else {
 				ejectdisk(1);
-				printf("Floppy image ejected from second drive.\n");
+				puts("Floppy image ejected from second drive.");
 			}
-		} else if (strcmpi(inputline, "help") == 0) {
+		} else if (!strcmpi(inputline, "help")) {
 			consolehelp();
-		} else if (strcmpi(inputline, "quit") == 0) {
+		} else if (!strcmpi(inputline, "quit")) {
 			running = 0;
+		} else if (!strcmpi(inputline, "close")) {
+			puts("Closing management console on request (or cannot read from console).");
+			break;
 		} else {
-			printf("Invalid command was entered.\n");
+			printf("Invalid command was entered: [%s]\n", inputline);
 		}
 	}
+	puts("Terminating console thread.");
 #ifndef _WIN32
 	return NULL;
 #endif

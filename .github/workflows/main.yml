@@ -12,22 +12,20 @@ jobs:
     - name: Update APT database
       run: sudo apt-get -yq update || true
     - name: Install OS packages for building
-      run: sudo apt-get -yq --no-install-suggests --no-install-recommends --force-yes install libsdl2-dev build-essential gcc make binutils-mingw-w64-x86-64 gcc-mingw-w64-x86-64 wget bash sed
-    - name: List of all installed packages
-      run: dpkg -l | cat || true
+      run: sudo apt-get -yq --no-install-suggests --no-install-recommends --force-yes install libsdl2-dev build-essential gcc make binutils-mingw-w64-x86-64 gcc-mingw-w64-x86-64 wget bash sed libpcap-dev
     - name: Modifying the build system
       run: pwd ; hostname ; sudo hostname actions.github.com || true ; sudo adduser --home `pwd` --shell /bin/bash --no-create-home --disabled-password --disabled-login --gecos "LGB builder" lgb && sudo chown -R lgb:lgb .
     - name: Show system status
       run: cat /etc/debian_version ; lsb_release -a ; gcc --version | head -n 1 ; make --version | head -n 1 ; bash --version | head -n 1 ; uname -a ; id -a ; echo "CWD is `pwd`" ; echo "PATH is $PATH" ; echo "Hostname is `hostname`" ; uptime ; df -h . ; ls -la .
     - name: Install SDL2 for Windows cross-compilation
-      run: sudo make installsdl2win || true
+      run: sudo make sdl2wininstall || true
     - name: Show native SDL2 status
       run: ls -l `which sdl2-config` || true ; sdl2-config --version --prefix --exec-prefix --cflags --libs --static-libs || true
     - name: Show Windows SDL2 status
       run: ls -l `which x86_64-w64-mingw32-sdl2-config` || true ; x86_64-w64-mingw32-sdl2-config --version --prefix --exec-prefix --cflags --libs --static-libs || true
     - name: Compiling for native (Linux)
       run: sudo -u lgb make dep ; sudo -u lgb make -j 2
-    - name: Compiling for Windows-64bit with Mingw cross-compiler
+    - name: Compiling for Windows 64bit with Mingw cross-compiler
       run: sudo -u lgb make windep || true ; sudo -u lgb make -j 2 winall || true
     - name: Show result
       run: ls -l bin/ ; ldd bin/fake86 || true

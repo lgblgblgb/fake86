@@ -9,8 +9,11 @@ SRCFILES_WIN	= $(wildcard src/win32/*.c) $(SRCFILES)
 OBJFILES_WIN	= $(addprefix bin/objs-win/, $(notdir $(SRCFILES_WIN:.c=.o))) bin/objs-win/windres.o
 BINPATH		= /usr/local/bin
 DATAPATH	= /usr/local/share/fake86
-CFLAGS		= -std=c11 -Ofast -Wall -pipe -DPATH_DATAFILES=\"$(DATAPATH)/\" -D_DEFAULT_SOURCE
-CFLAGS_WIN	= -std=c11 -Ofast -Wall -pipe -DPATH_DATAFILES=\"$(DATAPATH)/\" -D_DEFAULT_SOURCE
+#NETWORKING_ENABLED is not well tested. You can try to enable and put -lpcap into LIBS as well. No idea about the windows part ...
+#NETWORKEMU	= -DNETWORKING_ENABLED
+NETWORKEMU	=
+CFLAGS		= -std=c11 -Ofast -Wall -pipe -DPATH_DATAFILES=\"$(DATAPATH)/\" -D_DEFAULT_SOURCE $(NETWORKEMU)
+CFLAGS_WIN	= -std=c11 -Ofast -Wall -pipe -DPATH_DATAFILES=\"$(DATAPATH)/\" -D_DEFAULT_SOURCE $(NETWORKEMU)
 GENFLAGS	= -fno-common
 GENFLAGS_WIN	= -fno-common
 INCLUDE		= -Isrc
@@ -30,13 +33,9 @@ ALLDEP		=
 DEPFILE		= bin/objs/.depend
 DEPFILE_WIN	= bin/objs-win/.depend
 
-all:
-	$(MAKE) $(DEPFILE)
-	$(MAKE) $(BINS)
+all: $(BINS)
 
-winall:
-	$(MAKE) $(DEPFILE_WIN)
-	$(MAKE) $(BINS_WIN)
+winall: $(BINS_WIN)
 
 clangstricttest:
 	clang $(SRCFILES) -o $(BIN_FAKE86) $(CFLAGS) $(GENFLAGS) -Weverything $(INCLUDE) $(LIBS) $(SDL_CFLAGS) $(SDL_LIBS)
@@ -94,12 +93,12 @@ strip:
 	@test -f $(BIN_IMAGEGEN) && $(STRIP) $(BIN_IMAGEGEN) || echo "Not found: $(BIN_IMAGEGEN)"
 	@test -f $(BIN_IMAGEGEN).exe && $(STRIP_WIN) $(BIN_IMAGEGEN).exe || echo "Not found: $(BIN_IMAGEGEN).exe"
 
-$(DEPFILE): $(SRCFILES)
+$(DEPFILE):
 	$(CC) -MM $(CFLAGS) $(GENFLAGS) $(INCLUDE) $(SDL_CFLAGS) $(SRCFILES) | sed -E 's/^([^: ]+.o):/bin\/objs\/\0/' > $@
-$(DEPFILE_WIN): $(SRCFILES_WIN)
+$(DEPFILE_WIN):
 	$(CC_WIN) -MM $(CFLAGS_WIN) $(GENFLAGS_WIN) $(INCLUDE) $(SDL_CFLAGS_WIN) $(SRCFILES_WIN) | sed -E 's/^([^: ]+.o):/bin\/objs-win\/\0/' > $@
 
-installsdl2win:
+sdl2wininstall:
 	bin/tools/install-cross-win-mingw-sdl-on-linux.sh /usr/local/bin
 
 dep:
@@ -109,7 +108,7 @@ windep:
 	rm -f $(DEPFILE_WIN)
 	$(MAKE) $(DEPFILE_WIN)
 
-.PHONY: all winall clangstricttest test wintest install clean uninstall strip installsdl2win dep windep
+.PHONY: all winall clangstricttest test wintest install clean uninstall strip sdl2wininstall dep windep
 
 ifneq ($(wildcard $(DEPFILE)),)
 include $(DEPFILE)

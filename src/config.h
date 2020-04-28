@@ -23,6 +23,34 @@
 
 #define BUILD_STRING "Fake86 v0.20.4.26"
 
+//#define DO_NOT_FORCE_INLINE
+//#define DO_NOT_FORCE_UNREACHABLE
+
+#ifdef DO_NOT_FORCE_UNREACHABLE
+extern void UNREACHABLE_FATAL_ERROR ( void );
+#endif
+
+#ifdef __GNUC__
+#	define LIKELY(__x__)		__builtin_expect(!!(__x__), 1)
+#	define UNLIKELY(__x__)		__builtin_expect(!!(__x__), 0)
+#	ifdef DO_NOT_FORCE_UNREACHABLE
+#		define UNREACHABLE()	UNREACHABLE_FATAL_ERROR()
+#	else
+#		define UNREACHABLE()	__builtin_unreachable()
+#	endif
+#	ifdef DO_NOT_FORCE_INLINE
+#		define INLINE		inline
+#	else
+#		define INLINE		__attribute__ ((__always_inline__)) inline
+#	endif
+#else
+#	define LIKELY(__x__)	(__x__)
+#	define UNLIKELY(__x__)	(__x__)
+#	define INLINE		inline
+#	define UNREACHABLE()	UNREACHABLE_FATAL_ERROR()
+#endif
+
+
 //be sure to only define ONE of the CPU_* options at any given time, or
 //you will likely get some unexpected/bad results!
 //#define CPU_8086
