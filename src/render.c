@@ -67,6 +67,13 @@ static SDL_Texture  *sdl_tex = NULL;
 SDL_PixelFormat *sdl_pixfmt = NULL;
 
 
+int sdl_error ( const char *msg )
+{
+        fprintf(stderr, "SDL2_FATAL: %s: %s\n", msg, SDL_GetError());
+        return -1;
+}
+
+
 void setwindowtitle ( const char *extra )
 {
 	char temptext[256];
@@ -86,10 +93,10 @@ int initscreen ( const char *ver )
 		SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
 	);
 	if (!sdl_win)
-		return 1;
+		return sdl_error("Cannot create window");
 	sdl_ren = SDL_CreateRenderer(sdl_win, -1, SDL_RENDERER_ACCELERATED);
 	if (!sdl_ren)
-		return 1;
+		return sdl_error("Cannot create renderer");
 	SDL_RenderSetLogicalSize(sdl_ren, WINDOW_WIDTH, WINDOW_HEIGHT);
 	sdl_tex = SDL_CreateTexture(
 		sdl_ren,
@@ -98,10 +105,10 @@ int initscreen ( const char *ver )
 		TEXTURE_WIDTH, TEXTURE_HEIGHT
 	);
 	if (!sdl_tex)
-		return 1;
+		return sdl_error("Cannot create texture");
 	sdl_pixfmt = SDL_AllocFormat(PIXEL_FORMAT);
 	if (!sdl_pixfmt)
-		return 1;
+		return sdl_error("Cannot query pixel format");
 /*	printf("Rmask=%08X Gmask=%08X Bmask=%08X Amask=%08X Rloss=%d Gloss=%d Bloss=%d Aloss=%d Rshift=%d Gshift=%d Bshift=%d Ashift=%d\n",
 		sdl_pixfmt->Rmask,  sdl_pixfmt->Gmask,  sdl_pixfmt->Bmask,  sdl_pixfmt->Amask,
 		sdl_pixfmt->Rloss,  sdl_pixfmt->Gloss,  sdl_pixfmt->Bloss,  sdl_pixfmt->Aloss,
@@ -259,10 +266,8 @@ static uint32_t *start_pixel_access ( int nw, int nh )
 		exit(1);
 	}
 	void *pixels;
-	if (SDL_LockTexture(sdl_tex, &pia.rect, &pixels, &pia.texture_pitch)) {
-		fprintf(stderr, "FATAL: Cannot lock texture: %s\n", SDL_GetError());
-		exit(1);
-	}
+	if (SDL_LockTexture(sdl_tex, &pia.rect, &pixels, &pia.texture_pitch))
+		exit(sdl_error("Cannot lock texture"));
 	// "tail" is in DWORDS, which must be added at every end of line to a uint32 pointer
 	pia.tail = (pia.texture_pitch - 4 * nw) / 4;
 	pia.pix = pixels;

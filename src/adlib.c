@@ -232,7 +232,7 @@ int16_t adlibgensample ( void )
 			adlibaccum += (int16_t)adlibsample(curchan);
 		}
 	}
-	return (adlibaccum);
+	return adlibaccum;
 }
 
 

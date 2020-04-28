@@ -34,7 +34,6 @@ uint8_t ethif;
 #include <memory.h>
 
 #include "cpu.h"
-#include "main.h"
 #include "i8259.h"
 #include "netcard.h"
 

@@ -29,20 +29,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
+
 #include "mutex.h"
 #ifdef _WIN32
-extern CRITICAL_SECTION screenmutex;
-#include "win32/menus.h"
+	extern CRITICAL_SECTION screenmutex;
+#	include "win32/menus.h"
 #else
-#include <unistd.h>
-#ifndef __APPLE__
-#include <X11/Xlib.h>
-#endif
-static pthread_t consolethread;
+#	include <unistd.h>
+#	ifndef __APPLE__
+#		include <X11/Xlib.h>
+#	endif
+	static pthread_t consolethread;
 #endif
 
-#include "main.h"
-
+#include "fake86_release.h"
+#include "hostfs.h"
 #include "adlib.h"
 #include "audio.h"
 #include "i8253.h"
@@ -59,30 +60,46 @@ static pthread_t consolethread;
 #include "blaster.h"
 #include "sermouse.h"
 #include "input.h"
-
 #ifdef NETWORKING_ENABLED
-#include "packet.h"
+#	include "packet.h"
 #endif
 
-static const char *build = BUILD_STRING;
-
-uint64_t lasttick;
+//uint64_t lasttick;
 static uint64_t starttick, endtick;
+//uint8_t dohardreset = 0;
+//uint8_t usessource = 0;
 
-uint8_t verbose = 0, cgaonly = 0, useconsole = 0;
-char *biosfile = NULL;
-uint32_t speed = 0;
+//uint8_t cgaonly = 0;
+//uint8_t useconsole = 0;
 
 #ifdef DO_NOT_FORCE_UNREACHABLE
 void UNREACHABLE_FATAL_ERROR ( void )
 {
-	fprintf(stderr, "FATAL: Code point hit marked as 'unreachable'!!\n");
+	fprintf(stderr, "FATAL_CONTROL_FLOW: Code point hit marked as 'unreachable'!!\n");
 	exit(1);
 }
 #endif
 
+#if 0
 static uint32_t loadbinary (uint32_t addr32, const char *filename, uint8_t roflag)
 {
+	return hostfs_load_binary(filename, RAM + addr32, 1, 0x10000, "ROM");
+
+	HOSTFS_FILE *file = hostfs_open(filename, "rb");
+	if (!file)
+		return 0;
+	size_t readsize = hostfs_size(file);
+	if (readsize > 0x10000 || readsize <= 0) {
+		hostfs_close(file);
+		return 0;
+	}
+	size_t ret = hostfs_read(file, RAM + addr32, 1, readsize);
+	hostfs_close(file);
+	if (ret != readsize)
+		return 0;
+	memset(readonly + addr32, roflag, readsize);
+	return readsize;
+#if 0
 	FILE *binfile = fopen (filename, "rb");
 	if (binfile == NULL)
 		return 0;
@@ -99,40 +116,35 @@ static uint32_t loadbinary (uint32_t addr32, const char *filename, uint8_t rofla
 		return 0;
 	memset(readonly + addr32, roflag, readsize);
 	return readsize;
+#endif
 }
+#endif
 
+#if 0
 uint32_t loadrom (uint32_t addr32, const char *filename, uint8_t failure_fatal) {
-	uint32_t readsize;
-	readsize = loadbinary(addr32, filename, 1);
-	if (!readsize) {
+	int readsize = hostfs_load_binary(filename, RAM + addr32, 1, 0x10000, "ROM");
+	if (readsize <= 0) {
 		if(failure_fatal)
 			fprintf(stderr, "FATAL: Unable to load %s\n", filename);
 		else
 			printf("WARNING: Unable to load %s\n", filename);
 		return 0;
 	} else {
-		printf("Loaded %s at 0x%05X (%lu KB)\n", filename, addr32, (long unsigned int)(readsize >> 10));
+		printf("Loaded %s at 0x%05X (%d KB)\n", filename, addr32, readsize >> 10);
 		return readsize;
 	}
 }
+#endif
 
 static uint32_t loadbios (const char *filename)
 {
-	FILE *binfile = fopen(filename, "rb");
-	if (binfile == NULL)
+	uint8_t bios[0x10000];
+	int readsize = hostfs_load_binary(filename, bios, 1, 0x10000, "BIOS");
+	if (readsize <= 0)
 		return 0;
-	fseek(binfile, 0, SEEK_END);
-	long readsize = ftell(binfile);
-	if (readsize > 0x10000 || readsize <= 0) {
-		fclose(binfile);
-		return 0;
-	}
-	fseek(binfile, 0, SEEK_SET);
-	long ret = fread((void*)&RAM[0x100000 - readsize], 1, readsize, binfile);
-	fclose(binfile);
-	if (ret != readsize)
-		return 0;
-	memset((void*)&readonly[0x100000 - readsize], 1, readsize);
+	memcpy(RAM + 0x100000 - readsize, bios, readsize);
+	printf("BIOS %s loaded at 0x%05X (%d KB)\n", filename, 0x100000 - readsize, readsize >> 10);
+	memset(readonly + 0x100000 - readsize, 1, readsize);
 	return readsize;
 }
 
@@ -148,8 +160,8 @@ static void printbinary (uint8_t value) {
 }
 #endif
 
-uint8_t usessource = 0;
-static void inithardware(void) {
+static int inithardware(void)
+{
 #ifdef NETWORKING_ENABLED
 	if (ethif != 254)
 		initpcap();
@@ -161,55 +173,43 @@ static void inithardware(void) {
 	memset(port_read_callback16, 0, sizeof(port_read_callback16));
 	printf("  - Intel 8253 timer: ");
 	init8253();
-	printf("OK\n");
+	puts("OK");
 	printf("  - Intel 8259 interrupt controller: ");
 	init8259();
-	printf("OK\n");
+	puts("OK");
 	printf("  - Intel 8237 DMA controller: ");
 	init8237();
-	printf("OK\n");
+	puts("OK");
 	initVideoPorts();
 	if (usessource) {
-		printf ("  - Disney Sound Source: ");
+		printf("  - Disney Sound Source: ");
 		initsoundsource();
-		printf ("OK\n");
+		puts("OK");
 	}
 #ifndef NETWORKING_OLDCARD
 	printf("  - Novell NE2000 ethernet adapter: ");
 	isa_ne2000_init(0x300, 6);
-	printf ("OK\n");
+	puts("OK");
 #endif
 	printf("  - Adlib FM music card: ");
 	initadlib(0x388);
-	printf("OK\n");
+	puts("OK");
 	printf("  - Creative Labs Sound Blaster 2.0: ");
 	initBlaster(0x220, 7);
-	printf("OK\n");
+	puts("OK");
 	printf("  - Serial mouse (Microsoft compatible): ");
 	initsermouse (0x3F8, 4);
-	printf("OK\n");
+	puts("OK");
 	if (doaudio)
 		initaudio();
 	inittiming();
-	// FIXME: move SDL init to somewhere else!
-        if (doaudio) {
-                if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
-			fprintf(stderr, "FATAL: cannot initialize SDL2 level: %s\n", SDL_GetError());
-			exit(1);
-		}
-        } else {
-                if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER)) {
-			fprintf(stderr, "FATAL: cannot initialize SDL2 level: %s\n", SDL_GetError());
-			exit(1);
-		}
-        }
-	if (initscreen(build)) {
-		fprintf(stderr, "FATAL: cannot initialize SDL2 level: %s\n", SDL_GetError());
-		exit(1);
-	}
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | (doaudio ? SDL_INIT_AUDIO : 0)))
+		return sdl_error("Cannot initialize SDL2");
+	if (initscreen(FAKE86_RELEASE_STRING))
+		return 1;
+	return 0;
 }
 
-uint8_t dohardreset = 0;
 //uint8_t audiobufferfilled(void);
 
 #ifdef _WIN32
@@ -249,15 +249,12 @@ static void *EmuThread (void *dummy) {
 
 int main ( int argc, char *argv[] )
 {
-	uint32_t biossize;
-
-	printf("%s (C)2010-2013 Mike Chambers, (C)2020 Gabor Lenart \"LGB\"\n", build);
-	printf("[A portable, open-source 8086 PC emulator]\n\n");
-
+	puts(FAKE86_BANNER_STRING);
+	if (hostfs_init())
+		return -1;
 	parsecl(argc, argv);
-
 	memset(readonly, 0, 0x100000);
-	biossize = loadbios(biosfile);
+	uint32_t biossize = loadbios(biosfile);
 	if (!biossize)
 		return -1;
 #ifdef DISK_CONTROLLER_ATA
@@ -272,18 +269,15 @@ int main ( int argc, char *argv[] )
 	printf("\nInitializing CPU... ");
 	running = 1;
 	reset86();
-	printf("OK!\n");
-
-#ifndef _WIN32
-#ifndef __APPLE__
+	puts("OK!");
+#if !defined(_WIN32) && !defined(__APPLE__)
 	XInitThreads();
 #endif
-#endif
-	inithardware();
-
+	if (inithardware())
+		return -1;
 #ifdef _WIN32
 	initmenus();
-	InitializeCriticalSection (&screenmutex);
+	InitializeCriticalSection(&screenmutex);
 #endif
 	if (useconsole) {
 #ifdef _WIN32
@@ -292,13 +286,11 @@ int main ( int argc, char *argv[] )
 		pthread_create(&consolethread, NULL, (void*)runconsole, NULL);
 #endif
 	}
-
 #ifdef _WIN32
 		_beginthread(EmuThread, 0, NULL);
 #else
 		pthread_create(&emuthread, NULL, (void*)EmuThread, NULL);
 #endif
-
 	lasttick = starttick = SDL_GetTicks();
 	while (running) {
 		handleinput();
@@ -315,24 +307,18 @@ int main ( int argc, char *argv[] )
 	endtick = (SDL_GetTicks() - starttick) / 1000;
 	if (endtick == 0)
 		endtick = 1; //avoid divide-by-zero exception in the code below, if ran for less than 1 second
-
 	killaudio();
-
 	if (renderbenchmark) {
 		printf("\n%lu frames rendered in %lu seconds.\n", (long unsigned int)totalframes, (long unsigned int)endtick);
 		printf("Average framerate: %lu FPS.\n", (long unsigned int)(totalframes / endtick));
 	}
-
 	printf("\n%lu instructions executed in %lu seconds.\n", (long unsigned int)totalexec, (long unsigned int)endtick);
 	printf("Average speed: %lu instructions/second.\n", (long unsigned int)(totalexec / endtick));
-
 #ifdef CPU_ADDR_MODE_CACHE
 	printf("\n  Cached modregrm data access count: %lu\n", (long unsigned int)cached_access_count);
 	printf("Uncached modregrm data access count: %lu\n", (long unsigned int)uncached_access_count);
 #endif
-
 	if (useconsole)
 		exit(0); //makes sure console thread quits even if blocking
-
 	return 0;
 }

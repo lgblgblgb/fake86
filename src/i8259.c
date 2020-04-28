@@ -36,11 +36,14 @@ struct structpic i8259;
 uint8_t in8259(uint16_t portnum) {
 	switch (portnum & 1) {
 		   case 0:
-			if (i8259.readmode==0) return(i8259.irr); else return(i8259.isr);
+			if (i8259.readmode == 0)
+				return i8259.irr;
+			else
+				return i8259.isr;
 		   case 1: //read mask register
-			return(i8259.imr);
+			return i8259.imr;
 	}
-	return (0);
+	return 0;
 }
 
 void out8259(uint16_t portnum, uint8_t value) {
@@ -82,9 +85,9 @@ uint8_t nextintr(void) {
 		if ((tmpirr >> i) & 1) {
 		   i8259.irr ^= (1 << i);
 		   i8259.isr |= (1 << i);
-		   return(i8259.icw[2] + i);
+		   return i8259.icw[2] + i;
 		}
-	return(0); //this won't be reached, but without it the compiler gives a warning
+	return 0; //this won't be reached, but without it the compiler gives a warning
 }
 
 void doirq(uint8_t irqnum) {

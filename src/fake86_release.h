@@ -18,18 +18,11 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef FAKE86_MAIN_H_INCLUDED
-#define FAKE86_MAIN_H_INCLUDED
+#ifndef FAKE86_FAKE86_RELEASE_H_INCLUDED
+#define FAKE86_FAKE86_RELEASE_H_INCLUDED
 
-extern char *biosfile;
-extern uint8_t verbose;
-extern uint8_t useconsole;
-extern uint8_t usessource;
-extern uint32_t speed;
-extern uint64_t lasttick;
-extern uint8_t cgaonly;
-extern uint8_t dohardreset;
+#define FAKE86_RELEASE_STRING	"Fake86 v0.20.4.26"
 
-extern uint32_t loadrom (uint32_t addr32, const char *filename, uint8_t failure_fatal);
+#define FAKE86_BANNER_STRING	FAKE86_RELEASE_STRING " (C)2010-2013 Mike Chambers, (C)2020 Gabor Lenart \"LGB\"\n[A portable, open-source 8086 PC emulator]\n"
 
 #endif

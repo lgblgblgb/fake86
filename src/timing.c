@@ -43,7 +43,8 @@ static struct timeval tv;
 #include "video.h"
 #include "sndsource.h"
 #include "parsecl.h"
-#include "main.h"
+
+uint64_t lasttick;
 
 uint64_t hostfreq = 1000000, tickgap;
 static uint64_t curtick = 0, lastscanlinetick, curscanline = 0, i8253tickgap, lasti8253tick, scanlinetiming;

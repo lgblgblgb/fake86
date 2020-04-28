@@ -35,7 +35,6 @@
 
 #include "cpu.h"
 #include "packet.h"
-#include "main.h"
 
 
 struct netstruct net;

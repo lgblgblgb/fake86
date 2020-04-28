@@ -32,6 +32,7 @@ extern uint32_t	framedelay;
 extern uint64_t	totalframes;
 extern uint8_t	noscale, nosmooth;
 
+extern int      sdl_error       ( const char *msg   );
 extern int	initscreen	( const char *ver   );
 extern void	setwindowtitle	( const char *extra );
 extern void	doscrmodechange	( void );

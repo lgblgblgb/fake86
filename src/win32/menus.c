@@ -30,7 +30,6 @@
 #include "parsecl.h"
 #include "disk.h"
 #include "cpu.h"
-#include "main.h"
 
 HWND myWindow;
 HINSTANCE myInstance;

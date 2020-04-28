@@ -37,7 +37,7 @@ uint8_t insertdisk (uint8_t drivenum, char *filename) {
 	disk[drivenum].diskfile = fopen (filename, "r+b");
 	if (disk[drivenum].diskfile==NULL) {
 			disk[drivenum].inserted = 0;
-			return (1);
+			return 1;
 		}
 	fseek (disk[drivenum].diskfile, 0L, SEEK_END);
 	disk[drivenum].filesize = ftell (disk[drivenum].diskfile);
@@ -64,7 +64,7 @@ uint8_t insertdisk (uint8_t drivenum, char *filename) {
 					disk[drivenum].heads = 1;
 				}
 		}
-	return (0);
+	return 0;
 }
 
 void ejectdisk (uint8_t drivenum) {

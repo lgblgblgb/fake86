@@ -265,7 +265,7 @@ uint8_t inBlaster (uint16_t portnum) {
 	//if (lastread != portnum) printf ("%02X\n", ret);
 	//lastread = portnum;
 #endif
-	return (ret);
+	return ret;
 }
 
 //FILE *sbout = NULL;
@@ -294,8 +294,10 @@ void tickBlaster(void) {
 }
 
 int16_t getBlasterSample(void) {
-	if (blaster.speakerstate == 0) return (0);
-	else return ( (int16_t) blaster.sample - 128);
+	if (blaster.speakerstate == 0)
+		return 0;
+	else
+		return (int16_t)blaster.sample - 128;
 }
 
 void mixerReset(void) {

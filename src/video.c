@@ -32,7 +32,7 @@
 #include "cpu.h"
 #include "render.h"
 #include "ports.h"
-#include "main.h"
+#include "parsecl.h"
 
 uint8_t VRAM[262144], vidmode, cgabg, blankattr, vidgfxmode, vidcolor;
 uint16_t cursx, cursy, cols = 80, rows = 25, vgapage, cursorposition, cursorvisible;
@@ -51,9 +51,9 @@ uint16_t oldw, oldh; //used when restoring screen mode
 static inline uint32_t rgb(uint8_t r, uint8_t g, uint8_t b) {
 #if 0
 #ifdef __BIG_ENDIAN__
-	return ( (r<<24) | (g<<16) | (b<<8) );
+	return (r<<24) | (g<<16) | (b<<8);
 #else
-	return (r | (g<<8) | (b<<16) );
+	return r | (g<<8) | (b<<16);
 #endif
 #endif
 	//return SDL_MapRGBA(sdl_pixfmt, r, g, b, 0xFF);
@@ -664,48 +664,29 @@ static void outVGA (uint16_t portnum, uint8_t value) {
 uint8_t inVGA (uint16_t portnum) {
 	switch (portnum) {
 			case 0x3C1:
-				return ( (uint8_t) VGA_ATTR[portram[0x3C0]]);
+				return (uint8_t)VGA_ATTR[portram[0x3C0]];
 			case 0x3C5:
-				return ( (uint8_t) VGA_SC[portram[0x3C4]]);
+				return (uint8_t)VGA_SC[portram[0x3C4]];
 			case 0x3D5:
-				return ( (uint8_t) VGA_CRTC[portram[0x3D4]]);
+				return (uint8_t)VGA_CRTC[portram[0x3D4]];
 			case 0x3C7: //DAC state
-				return (stateDAC);
+				return stateDAC;
 			case 0x3C8: //palette index
-				return (latchReadPal);
+				return latchReadPal;
 			case 0x3C9: //RGB data register
 				switch (latchReadRGB++) {
-#if 0
-#ifdef __BIG_ENDIAN__
 						case 0: //blue
-							return ( (palettevga[latchReadPal] >> 26) & 63);
+							return (palettevga[latchReadPal] >> (sdl_pixfmt->Rshift + 2)) & 63;
 						case 1: //green
-							return ( (palettevga[latchReadPal] >> 18) & 63);
+							return (palettevga[latchReadPal] >> (sdl_pixfmt->Gshift + 2)) & 63;
 						case 2: //red
 							latchReadRGB = 0;
-							return ( (palettevga[latchReadPal++] >> 10) & 63);
-#else
-						case 0: //blue
-							return ( (palettevga[latchReadPal] >> 2) & 63);
-						case 1: //green
-							return ( (palettevga[latchReadPal] >> 10) & 63);
-						case 2: //red
-							latchReadRGB = 0;
-							return ( (palettevga[latchReadPal++] >> 18) & 63);
-#endif
-#endif
-						case 0: //blue
-							return  (palettevga[latchReadPal] >> (sdl_pixfmt->Rshift + 2)) & 63;
-						case 1: //green
-							return  (palettevga[latchReadPal] >> (sdl_pixfmt->Gshift + 2)) & 63;
-						case 2: //red
-							latchReadRGB = 0;
-							return  (palettevga[latchReadPal++] >> (sdl_pixfmt->Bshift + 2)) & 63;
+							return (palettevga[latchReadPal++] >> (sdl_pixfmt->Bshift + 2)) & 63;
 					}
 			case 0x3DA:
-				return (port3da);
+				return port3da;
 		}
-	return (portram[portnum]); //this won't be reached, but without it the compiler gives a warning
+	return portram[portnum]; //this won't be reached, but without it the compiler gives a warning
 }
 
 #define shiftVGA(value) {\
@@ -859,11 +840,11 @@ uint8_t readVGA (uint32_t addr32) {
 	VGA_latch[1] = VRAM[addr32+planesize];
 	VGA_latch[2] = VRAM[addr32+planesize*2];
 	VGA_latch[3] = VRAM[addr32+planesize*3];
-	if (VGA_SC[2] & 1) return (VRAM[addr32]);
-	if (VGA_SC[2] & 2) return (VRAM[addr32+planesize]);
-	if (VGA_SC[2] & 4) return (VRAM[addr32+planesize*2]);
-	if (VGA_SC[2] & 8) return (VRAM[addr32+planesize*3]);
-	return (0); //this won't be reached, but without it some compilers give a warning
+	if (VGA_SC[2] & 1) return VRAM[addr32];
+	if (VGA_SC[2] & 2) return VRAM[addr32+planesize];
+	if (VGA_SC[2] & 4) return VRAM[addr32+planesize*2];
+	if (VGA_SC[2] & 8) return VRAM[addr32+planesize*3];
+	return 0; //this won't be reached, but without it some compilers give a warning
 }
 
 void initVideoPorts(void) {

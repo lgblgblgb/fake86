@@ -36,7 +36,7 @@
 #include "ports.h"
 #include "disk.h"
 #include "timing.h"
-#include "main.h"
+#include "parsecl.h"
 
 #ifdef NETWORKING_ENABLED
 #include "netcard.h"

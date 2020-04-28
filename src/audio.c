@@ -38,8 +38,8 @@
 #include "adlib.h"
 #include "sndsource.h"
 #include "speaker.h"
-#include "main.h"
 #include "timing.h"
+#include "parsecl.h"
 
 uint8_t doaudio = 1;
 
@@ -106,7 +106,7 @@ static int8_t samps[2400];
 
 uint8_t audiobufferfilled(void)
 {
-	if (audbufptr >= usebuffersize) return(1);
+	if (audbufptr >= usebuffersize) return 1;
 	return 0;
 }
 

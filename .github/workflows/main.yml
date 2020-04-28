@@ -12,7 +12,7 @@ jobs:
     - name: Update APT database
       run: sudo apt-get -yq update || true
     - name: Install OS packages for building
-      run: sudo apt-get -yq --no-install-suggests --no-install-recommends --force-yes install libsdl2-dev build-essential gcc make binutils-mingw-w64-x86-64 gcc-mingw-w64-x86-64 wget bash sed libpcap-dev
+      run: sudo apt-get -yq --no-install-suggests --no-install-recommends --force-yes install libsdl2-dev build-essential gcc make binutils-mingw-w64-x86-64 gcc-mingw-w64-x86-64 wget bash sed libpcap-dev libx11-dev
     - name: Modifying the build system
       run: pwd ; hostname ; sudo hostname actions.github.com || true ; sudo adduser --home `pwd` --shell /bin/bash --no-create-home --disabled-password --disabled-login --gecos "LGB builder" lgb && sudo chown -R lgb:lgb .
     - name: Show system status

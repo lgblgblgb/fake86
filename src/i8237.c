@@ -38,15 +38,15 @@ static uint8_t flipflop = 0;
 
 uint8_t read8237 (uint8_t channel) {
 	uint8_t ret;
-	if (dmachan[channel].masked) return (128);
+	if (dmachan[channel].masked) return 128;
 	if (dmachan[channel].autoinit && (dmachan[channel].count > dmachan[channel].reload) ) dmachan[channel].count = 0;
-	if (dmachan[channel].count > dmachan[channel].reload) return (128);
+	if (dmachan[channel].count > dmachan[channel].reload) return 128;
 	//if (dmachan[channel].direction) ret = RAM[dmachan[channel].page + dmachan[channel].addr + dmachan[channel].count];
 	//	else ret = RAM[dmachan[channel].page + dmachan[channel].addr - dmachan[channel].count];
 	if (dmachan[channel].direction == 0) ret = RAM[dmachan[channel].page + dmachan[channel].addr + dmachan[channel].count];
 	else ret = RAM[dmachan[channel].page + dmachan[channel].addr - dmachan[channel].count];
 	dmachan[channel].count++;
-	return (ret);
+	return ret;
 }
 
 void out8237 (uint16_t addr, uint8_t value) {
@@ -113,12 +113,14 @@ uint8_t in8237 (uint16_t addr) {
 #endif
 	switch (addr) {
 		case 3:
-			if (flipflop == 1) return(dmachan[1].reload >> 8);
-			else return(dmachan[1].reload);
-			flipflop = ~flipflop & 1;
+			if (flipflop == 1)
+				return dmachan[1].reload >> 8;
+			else
+				return dmachan[1].reload;
+			flipflop = ~flipflop & 1;	// this seems to be invalid, control never gets here ... :-O
 			break;
 	}
-	return (0);
+	return 0;
 }
 
 void init8237(void) {
