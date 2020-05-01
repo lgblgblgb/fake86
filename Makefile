@@ -42,6 +42,9 @@ clangstricttest:
 	ls -l $(BIN_FAKE86)
 	rm $(BIN_FAKE86)
 
+genbininclude:
+	bin/tools/asciidump src/bindata.c src/bindata.h bin/data/asciivga.dat:mem_asciivga_dat
+
 bin/objs/%.o: src/%.c $(ALLDEP)
 	$(CC) $(CFLAGS) $(GENFLAGS) $(INCLUDE) $(SDL_CFLAGS) -o $@ -c $<
 
@@ -108,7 +111,7 @@ windep:
 	rm -f $(DEPFILE_WIN)
 	$(MAKE) $(DEPFILE_WIN)
 
-.PHONY: all winall clangstricttest test wintest install clean uninstall strip sdl2wininstall dep windep
+.PHONY: all winall clangstricttest genbininclude test wintest install clean uninstall strip sdl2wininstall dep windep
 
 ifneq ($(wildcard $(DEPFILE)),)
 include $(DEPFILE)

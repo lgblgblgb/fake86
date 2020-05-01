@@ -25,7 +25,8 @@
 // Filenames starting with @ -> locate file in the preferences directory
 // Filenames otherwise       -> take filename AS-IS!!
 #define DEFAULT_BIOS_FILE 	"#pcxtbios.bin"
-#define DEFAULT_FONT_FILE 	"#asciivga.dat"
+//#define DEFAULT_FONT_FILE 	"#asciivga.dat"
+#define DEFAULT_FONT_FILE	""
 #define DEFAULT_ROMBASIC_FILE	"#rombasic.bin"
 #define DEFAULT_VIDEOROM_FILE	"#videorom.bin"
 #define DEFAULT_IDEROM_FILE	"#ide_xt.bin"

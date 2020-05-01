@@ -1,0 +1,49 @@
+#!/bin/sh
+
+if [ "$1" = "" -o "$2" = "" -o "$3" = "" ]; then
+	echo "Bad usage" 2>&1
+	exit 1
+fi
+
+C_FILE="$1"
+H_FILE="$2"
+TMP="$C_FILE.temp"
+
+echo $TMP
+
+rm -f $C_FILE $H_FILE $TMP || exit 1
+
+echo "/* this is a generated file, do not edit by hand */" > $C_FILE
+cp $C_FILE $H_FILE
+
+echo "#ifndef FAKE86_BINARYCONTENTFILE_INCLUDED" >> $H_FILE
+echo "#define FAKE86_BINARYCONTENTFILE_INCLUDED" >> $H_FILE
+echo "#include <stdint.h>" >> $H_FILE
+echo "#include \"`basename $H_FILE`\"" >> $C_FILE
+
+while [ "$3" != "" ]; do
+	INPUT="`echo $3 | cut -f1 -d:`"
+	NAME="`echo $3 | cut -f2 -d:`"
+	if [ "$INPUT" = "" -o "$NAME" = "" -o "$INPUT" = "$3" -o "$NAME" = "$3" -o "$NAME" = "$INPUT" ]; then
+		echo "Bad parameter: $3" 2>&1
+		rm -f $C_FILE $H_FILE $TMP
+		exit 1
+	fi
+	xxd -i < $INPUT > $TMP
+	if [ ! -s $TMP ]; then
+		rm -f $C_FILE $H_FILE $TMP
+		exit 1
+	fi
+	SIZE="`stat -c%s $INPUT`"
+	echo "const uint8_t $NAME [$SIZE] = {" >> $C_FILE
+	cat $TMP >> $C_FILE
+	echo "};" >> $C_FILE
+	echo "extern const uint8_t $NAME [$SIZE];" >> $H_FILE
+	rm -f $TMP
+	shift
+done
+
+echo "#endif" >> $H_FILE
+
+exit 0
+
