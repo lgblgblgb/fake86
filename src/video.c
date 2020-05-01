@@ -33,6 +33,7 @@
 #include "render.h"
 #include "ports.h"
 #include "parsecl.h"
+#include "hostfs.h"
 
 uint8_t VRAM[262144], vidmode, cgabg, blankattr, vidgfxmode, vidcolor;
 uint16_t cursx, cursy, cols = 80, rows = 25, vgapage, cursorposition, cursorvisible;
@@ -254,8 +255,12 @@ void vidinterrupt(void) {
 		}
 }
 
-void initcga( void )
+
+int initcga ( void )
 {
+	if (hostfs_load_binary(DEFAULT_FONT_FILE, fontcga, 32768, 32768, NULL) != 32768)
+		return -1;
+#if 0
 	FILE *fontfile = fopen(PATH_DATAFILES "asciivga.dat", "rb");
 	if (fontfile == NULL) {
 		fprintf(stderr, "FATAL: Cannot open " PATH_DATAFILES "asciivga!\n");
@@ -267,6 +272,7 @@ void initcga( void )
 		fprintf(stderr, "FATAL: Cannot read file " PATH_DATAFILES "asciivga!\n");
 		exit(1);
 	}
+#endif
 
 	palettecga[0] = rgb (0, 0, 0);
 	palettecga[1] = rgb (0, 0, 0xAA);
@@ -540,6 +546,8 @@ void initcga( void )
 	palettevga[253] = rgb (0, 0, 0);
 	palettevga[254] = rgb (0, 0, 0);
 	palettevga[255] = rgb (0, 0, 0);
+
+	return 0;
 }
 
 uint16_t vtotal = 0;

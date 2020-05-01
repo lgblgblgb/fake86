@@ -22,22 +22,25 @@
 #define FAKE86_DISK_H_INCLUDED
 
 #include <stdint.h>
-#include <stdio.h>
+#include "hostfs.h"
 
 struct struct_drive {
-	FILE *diskfile;
-	uint32_t filesize;
-	uint16_t cyls;
-	uint16_t sects;
-	uint16_t heads;
-	uint8_t inserted;
-	char *filename;
+	HOSTFS_FILE	*diskfile;
+	size_t		filesize;
+	uint16_t	cyls;
+	uint16_t	sects;
+	uint16_t	heads;
+	uint8_t		inserted;
+	uint8_t		readonly;
+	char 		*filename;
 };
+
 extern struct struct_drive disk[256];
 
-extern uint8_t insertdisk (uint8_t drivenum, char *filename);
-extern void diskhandler(void);
-extern void ejectdisk (uint8_t drivenum);
-extern void readdisk(uint8_t drivenum, uint16_t dstseg, uint16_t dstoff, uint16_t cyl, uint16_t sect, uint16_t head, uint16_t sectcount);
+extern uint8_t	insertdisk  ( uint8_t drivenum, char *filename );
+extern void	diskhandler ( void );
+extern void	ejectdisk   ( uint8_t drivenum );
+
+extern void	bios_read_boot_sector ( int drive, uint16_t dstseg, uint16_t dstofs );
 
 #endif

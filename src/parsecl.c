@@ -36,6 +36,7 @@
 #include "cpu.h"
 #include "packet.h"
 #include "hostfs.h"
+#include "bios.h"
 
 #ifndef _WIN32
 #define strcmpi strcasecmp
@@ -89,6 +90,7 @@ static void showhelp ( void )
 		"                   Default boot device is hard drive 0, if it exists.\n"
 		"                   Otherwise, the default is floppy 0.\n"
 		"  -bios filename   Specify alternate BIOS ROM image to use.\n"
+		"  -internalbios    Use highly experimental internal BIOS (overrides -bios).\n"
 #ifdef NETWORKING_ENABLED
 #ifdef _WIN32
 		"  -net #           Enable ethernet emulation via winpcap, where # is the\n"
@@ -159,7 +161,7 @@ void parsecl ( int argc, char *argv[] )
 	textbase = 0xB8000;
 	ethif = 254;
 	usefullscreen = 0;
-	biosfile = PATH_DATAFILES "pcxtbios.bin";
+	biosfile = DEFAULT_BIOS_FILE;
 	for (int i = 1; i < argc; i++) {
 		if (!strcmpi(argv[i], "-h") || !strcmpi(argv[i], "-?") || !strcmpi(argv[i], "-help")) {
 			showhelp();
@@ -222,6 +224,7 @@ void parsecl ( int argc, char *argv[] )
 		else if (!strcmpi(argv[i], "-delay"))		framedelay = atol(argv[++i]);
 		else if (!strcmpi(argv[i], "-console"))		useconsole = 1;
 		else if (!strcmpi(argv[i], "-slowsys"))		slowsystem = 1;
+		else if (!strcmpi(argv[i], "-internalbios"))	internalbios = 1;
 		else if (!strcmpi(argv[i], "-oprom")) {
 			i++;
 			uint32_t tempuint = hextouint(argv[i++]);

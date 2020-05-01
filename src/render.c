@@ -116,7 +116,10 @@ int initscreen ( const char *ver )
 	); */
 	sprintf(windowtitle, "%s", ver);
 	setwindowtitle(NULL);
-	initcga();
+	if (initcga()) {
+		fprintf(stderr, "FATAL: Cannot initialize CGA subsystem\n");
+		return -1;
+	}
 #ifdef _WIN32
 	InitializeCriticalSection(&screenmutex);
 	_beginthread(VideoThread, 0, NULL);
@@ -528,6 +531,8 @@ static void draw ( void )
 			else
 				planemode = 0;
 			vgapage = ( (uint32_t) VGA_CRTC[0xC]<<8) + (uint32_t) VGA_CRTC[0xD];
+			// Newer?: ->
+			// vgapage = ( (uint32_t) VGA_CRTC[0xC]<<8) + (uint32_t) VGA_CRTC[0xD];
 			for (int y = 0; y < pia.rect.h; y++) {
 				for (int x = 0; x < pia.rect.w; x++) {
 					if (!planemode) {

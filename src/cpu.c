@@ -37,6 +37,7 @@
 #include "disk.h"
 #include "timing.h"
 #include "parsecl.h"
+#include "bios.h"
 
 #ifdef NETWORKING_ENABLED
 #include "netcard.h"
@@ -68,7 +69,7 @@ static const uint8_t parity[0x100] = {
 	1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1
 };
 
-uint8_t RAM[0x100000], readonly[0x100000];
+uint8_t RAM[RAM_SIZE], readonly[RAM_SIZE];
 uint8_t bootdrive = 0, hdcount = 0;
 static uint8_t hltstate = 0;
 static uint8_t /*opcode,*/ segoverride /*, reptype */;
@@ -562,6 +563,12 @@ static void push(uint16_t pushval) {
 	putmem16(segregs[regss], regs.wordregs[regsp], pushval);
 }
 
+void cpu_push ( uint16_t pushval )
+{
+	push(pushval);
+}
+
+
 static uint16_t pop(void) {
 
 	uint16_t tempval;
@@ -569,6 +576,11 @@ static uint16_t pop(void) {
 	tempval = getmem16(segregs[regss], regs.wordregs[regsp]);
 	regs.wordregs[regsp] = regs.wordregs[regsp] + 2;
 	return tempval;
+}
+
+uint16_t cpu_pop ( void )
+{
+	return pop();
 }
 
 void reset86(void) {
@@ -1162,15 +1174,17 @@ static void op_grp5(void) {
 	}
 }
 
-static uint8_t didintr = 0;
+//static uint8_t didintr = 0;
 //static uint8_t dolog = 0;
 //static FILE *logout;
 //static uint8_t printops = 0;
 
 static void intcall86(uint8_t intnum) {
+	if (!internalbios) {
 	static uint16_t lastint10ax;
 	uint16_t oldregax;
-	didintr = 1;
+	// this didintr seems not to be used just a value assigned ..
+	//didintr = 1;
 
 	if (intnum == 0x19)
 		didbootstrap = 1;
@@ -1221,10 +1235,16 @@ static void intcall86(uint8_t intnum) {
 		if (bootdrive < 255) { // read first sector of boot drive into
 				       // 07C0:0000 and execute it
 			regs.byteregs[regdl] = bootdrive;
-			readdisk(regs.byteregs[regdl], 0x07C0, 0x0000, 0, 1, 0,
-				 1);
-			segregs[regcs] = 0x0000;
-			ip = 0x7C00;
+			bios_read_boot_sector(bootdrive, 0, 0x7C00);
+			if (cf) {
+				fprintf(stderr, "BOOT: cannot read boot record of drive %02X! Trying ROM basic instead!\n", bootdrive);
+				segregs[regcs] = 0xF600;
+				ip = 0;
+			} else {
+				segregs[regcs] = 0x0000;
+				ip = 0x7C00;
+				printf("BOOT: executing boot record at %04X:%04X\n", segregs[regcs], ip);
+			}
 		} else {
 			segregs[regcs] =
 			    0xF600; // start ROM BASIC at bootstrap if requested
@@ -1245,7 +1265,7 @@ static void intcall86(uint8_t intnum) {
 		return;
 #endif
 	}
-
+	} // internalbios
 	push(makeflagsword());
 	push(segregs[regcs]);
 	push(ip);
@@ -1466,6 +1486,7 @@ void exec86(uint32_t execloops) {
 			}
 			opcode = prefetch[ea - prefetch_base];
 #else
+			//printf("EXEC @ %04X:%04X saveip=%04X\n", segregs[regcs], ip, saveip);
 			opcode = getmem8(segregs[regcs], ip);
 #endif
 			StepIP(1);
@@ -3374,7 +3395,10 @@ void exec86(uint32_t execloops) {
 			break;
 
 		case 0xCC: /* CC INT 3 */
-			intcall86(3);
+			if (segregs[regcs] == internalbiostrapseg && saveip < 0x400)
+				bios_internal_trap(saveip);
+			else
+				intcall86(3);
 			break;
 
 		case 0xCD: /* CD INT Ib */

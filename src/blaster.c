@@ -139,6 +139,7 @@ void cmdBlaster (uint8_t value) {
 
 			case 0xD0: //pause 8-bit DMA I/O
 				blaster.paused8 = 1;
+				break;	// FIXME: it was a missing break, I guess it was a mistake only!!
 			case 0xD1: //speaker output on
 				blaster.speakerstate = 1;
 				break;

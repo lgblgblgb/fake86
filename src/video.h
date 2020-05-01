@@ -58,6 +58,6 @@ extern uint8_t VRAM[262144];
 extern void initVideoPorts(void);
 extern void vidinterrupt(void);
 extern void writeVGA(uint32_t addr32, uint8_t value);
-extern void initcga ( void );
+extern int  initcga ( void );
 
 #endif

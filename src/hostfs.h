@@ -23,12 +23,15 @@
 #include <SDL.h>
 
 #define hostfs_read			SDL_RWread
+#define hostfs_write			SDL_RWwrite
 #define hostfs_close			SDL_RWclose
 #define hostfs_size			SDL_RWsize
 #define hostfs_seek_set(file,ofs)	SDL_RWseek(file, ofs, RW_SEEK_SET)
 #define hostfs_seek_end(file,ofs)	SDL_RWseek(file, ofs, RW_SEEK_END)
 #define hostfs_seek_cur(file,ofs)	SDL_RWseek(file, ofs, RW_SEEK_CUR)
 #define hostfs_tell			SDL_RWtell
+
+extern int hostfs_was_fallback_mode;
 
 typedef SDL_RWops HOSTFS_FILE;
 

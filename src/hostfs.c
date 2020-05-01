@@ -29,6 +29,9 @@ static const char *app_basepath;
 static const char *app_prefpath;
 
 
+int hostfs_was_fallback_mode;
+
+
 static HOSTFS_FILE *try_open ( const char *basedir, const char *fn, const char *mode, const char *mode_fallback )
 {
 	char fnbuf[basedir ? strlen(basedir) + strlen(fn) + 1 : 0];
@@ -38,9 +41,20 @@ static HOSTFS_FILE *try_open ( const char *basedir, const char *fn, const char *
 		fn = fnbuf;
 	}
 	HOSTFS_FILE *file = SDL_RWFromFile(fn, mode);
+	hostfs_was_fallback_mode = 0;
 	if (file)
-		return file;
-	return mode_fallback ? SDL_RWFromFile(fn, mode_fallback) : NULL;
+		goto ok;
+	if (mode_fallback) {
+		hostfs_was_fallback_mode = 1;
+		mode = mode_fallback;
+		file = SDL_RWFromFile(fn, mode);
+		if (file)
+			goto ok;
+	}
+	return NULL;
+ok:
+	printf("File %s has been opened with mode \"%s\" successfully.\n", fn, mode);
+	return file;
 }
 
 #ifdef _WIN32
@@ -65,11 +79,12 @@ HOSTFS_FILE *hostfs_open ( const char *fn, const char *mode )
 	switch (fn[0]) {
 		case '#':
 			tries[try_no++] = app_basepath;
+#ifndef _WIN32
 			tries[try_no++] = PATH_DATAFILES;
+#endif
 			tries[try_no++] = TRY_PATH0;
 			tries[try_no++] = TRY_PATH1;
 			tries[try_no++] = app_prefpath;
-			tries[try_no++] = NULL;
 			fn++;
 			break;
 		case '@':

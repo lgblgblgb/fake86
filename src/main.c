@@ -60,6 +60,7 @@
 #include "blaster.h"
 #include "sermouse.h"
 #include "input.h"
+#include "bios.h"
 #ifdef NETWORKING_ENABLED
 #	include "packet.h"
 #endif
@@ -136,7 +137,7 @@ uint32_t loadrom (uint32_t addr32, const char *filename, uint8_t failure_fatal) 
 }
 #endif
 
-static uint32_t loadbios (const char *filename)
+static uint32_t loadbios ( const char *filename )
 {
 	uint8_t bios[0x10000];
 	int readsize = hostfs_load_binary(filename, bios, 1, 0x10000, "BIOS");
@@ -160,7 +161,7 @@ static void printbinary (uint8_t value) {
 }
 #endif
 
-static int inithardware(void)
+static int inithardware( void )
 {
 #ifdef NETWORKING_ENABLED
 	if (ethif != 254)
@@ -253,19 +254,25 @@ int main ( int argc, char *argv[] )
 	if (hostfs_init())
 		return -1;
 	parsecl(argc, argv);
-	memset(readonly, 0, 0x100000);
-	uint32_t biossize = loadbios(biosfile);
-	if (!biossize)
-		return -1;
+	memset(readonly, 0, RAM_SIZE);
+	memset(RAM, 0, RAM_SIZE);
+	if (!internalbios) {
+		uint32_t biossize = loadbios(biosfile);
+		if (!biossize)
+			return -1;
+		if (biossize <= 8192) {
+			loadrom(0xF6000UL, DEFAULT_ROMBASIC_FILE, 0);
+			if (!loadrom(0xC0000UL, DEFAULT_VIDEOROM_FILE, 1))
+				return -1;
+		}
+	} else {
+		memset(readonly + 0xC0000, 1, 0x40000);
+		bios_internal_install();
+	}
 #ifdef DISK_CONTROLLER_ATA
-	if (!loadrom(0xD0000UL, PATH_DATAFILES "ide_xt.bin", 1))
+	if (!loadrom(0xD0000UL, DEFAULT_IDEROM_FILE, 1))
 		return -1;
 #endif
-	if (biossize <= 8192) {
-		loadrom(0xF6000UL, PATH_DATAFILES "rombasic.bin", 0);
-		if (!loadrom(0xC0000UL, PATH_DATAFILES "videorom.bin", 1))
-			return -1;
-	}
 	printf("\nInitializing CPU... ");
 	running = 1;
 	reset86();

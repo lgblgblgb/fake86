@@ -126,13 +126,14 @@ void tickaudio(void) {
 }
 
 
-static void fill_audio ( void *udata, int8_t *stream, int len )
+// FIXME: it was int8_t I modified to uint8_t ...
+static void fill_audio ( void *udata, uint8_t *stream, int len )
 {
-	memcpy (stream, audbuf, len);
-	memmove (audbuf, &audbuf[len], usebuffersize - len);
-
+	memcpy(stream, audbuf, len);
+	memmove(audbuf, &audbuf[len], usebuffersize - len);
 	audbufptr -= len;
-	if (audbufptr < 0) audbufptr = 0;
+	if (audbufptr < 0)
+		audbufptr = 0;
 }
 
 
@@ -149,18 +150,18 @@ void initaudio ( void )
 		latency = 1000;
 	audbufptr = usebuffersize = (usesamplerate / 1000) * latency;
 	gensamplerate = usesamplerate;
-	doublesamplecount = (uint32_t) ((double)usesamplerate * (double)0.01);
+	doublesamplecount = (uint32_t)((double)usesamplerate * (double)0.01);
 	wanted.freq = usesamplerate;
 	wanted.format = AUDIO_U8;
 	wanted.channels = 1;
-	wanted.samples = (uint16_t) usebuffersize >> 1;
-	wanted.callback = (void*)fill_audio;
+	wanted.samples = (uint16_t)usebuffersize >> 1;
+	wanted.callback = fill_audio;
 	wanted.userdata = NULL;
-	if (SDL_OpenAudio (&wanted, NULL) <0) {
-		printf ("Error: %s\n", SDL_GetError());
+	if (SDL_OpenAudio(&wanted, NULL) < 0) {
+		printf("Error: %s\n", SDL_GetError());
 		return;
 	} else {
-		printf ("OK! (%lu Hz, %lu ms, %lu sample latency)\n", (long unsigned int)usesamplerate, (long unsigned int)latency, (long unsigned int)usebuffersize);
+		printf("OK! (%lu Hz, %lu ms, %lu sample latency)\n", (long unsigned int)usesamplerate, (long unsigned int)latency, (long unsigned int)usebuffersize);
 	}
 	memset(audbuf, 128, sizeof(audbuf));
 	audbufptr = usebuffersize;
@@ -172,7 +173,7 @@ void initaudio ( void )
 
 void killaudio ( void )
 {
-	SDL_PauseAudio (1);
+	SDL_PauseAudio(1);
 	if (wav_file == NULL)
 		return;
 	wav_hdr.ChunkSize = wav_hdr.Subchunk2Size + sizeof(wav_hdr) - 8;

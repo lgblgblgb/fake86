@@ -133,9 +133,11 @@ struct addrmodecache_s {
 	}
 #endif
 
+#define RAM_SIZE 0x100000
+
 extern uint8_t portram[0x10000];
-extern uint8_t RAM[0x100000];
-extern uint8_t readonly[0x100000];
+extern uint8_t RAM[RAM_SIZE];
+extern uint8_t readonly[RAM_SIZE];
 extern uint16_t segregs[4];
 extern uint8_t cf;
 extern uint8_t running;
@@ -148,5 +150,7 @@ extern void write86 (uint32_t addr32, uint8_t value);
 extern void reset86(void);
 extern void exec86 (uint32_t execloops);
 extern uint8_t read86 (uint32_t addr32);
+extern void cpu_push ( uint16_t pushval );
+extern uint16_t cpu_pop ( void );
 
 #endif
