@@ -64,6 +64,9 @@
 #ifdef NETWORKING_ENABLED
 #	include "packet.h"
 #endif
+#ifdef USE_KVM
+#	include "kvm.h"
+#endif
 
 //uint64_t lasttick;
 static uint64_t starttick, endtick;
@@ -217,6 +220,42 @@ static void EmuThread (void *dummy) {
 static pthread_t emuthread;
 static void *EmuThread (void *dummy) {
 #endif
+#ifdef USE_KVM
+	if (usekvm)
+		while (running) {
+			cpu_regs_to_kvm();
+			if (kvm_run()) {
+				fprintf(stderr, "FATAL ERROR: exiting because of KVM problem.\n");
+				running = 0;
+				break;
+			}
+			cpu_regs_from_kvm();
+			switch (kvm.kvm_run->exit_reason) {
+				case KVM_EXIT_IO:
+					if (kvm.kvm_run->io.direction == KVM_EXIT_IO_OUT) {
+						printf("KVM: output request, port %Xh IO-size %d\n",
+							kvm.kvm_run->io.port,
+							kvm.kvm_run->io.size
+						);
+						//if (kvm.kvm_run->io.size == 1)
+						//	;
+					} else if (kvm.kvm_run->io.direction == KVM_EXIT_IO_IN) {
+						printf("KVM: input request, port %Xh IO-size %d\n",
+							kvm.kvm_run->io.port,
+							kvm.kvm_run->io.size
+						);
+					} else {
+						printf("KVM: unknown I/O event requested! (%d)\n", kvm.kvm_run->io.direction);
+					}
+					exec86(1);	// execute a single opcode with the software emulator, hopefully the I/O one, which was the reason KVM exited from VM run mode.
+					continue;
+			}
+			printf("KVM is not ready yet :(\n");
+			running = 0;
+			break;
+		}
+	else
+#endif
 	while (running) {
 		if (!speed)
 			exec86(10000);
@@ -251,6 +290,27 @@ int main ( int argc, char *argv[] )
 	if (hostfs_init())
 		return -1;
 	parsecl(argc, argv);
+#ifdef USE_KVM
+	if (!usekvm) {
+		RAM = SDL_malloc(RAM_SIZE);
+		if (!RAM) {
+			fprintf(stderr, "Cannot allocate memory!\n");
+			return -1;
+		}
+		printf("MEM: allocated system memory (%uK) at %p for software CPU\n", (RAM_SIZE >> 10), RAM);
+	} else {
+		if (kvm_init(RAM_SIZE)) {
+			fprintf(stderr, "Cannot initialize KVM!\n");
+			return -1;
+		}
+		RAM = kvm.mem;
+		printf("MEM: allocated system memory (%uK) at %p via mmap() for KVM\n", (RAM_SIZE >> 10), RAM);
+		//fprintf(stderr, "KVM: yet unimplemented...\n");
+		//return -1;
+	}
+#else
+	printf("MEM: using static memory (%uK) for software CPU\n", (RAM_SIZE >> 10));
+#endif
 	memset(readonly, 0, RAM_SIZE);
 	memset(RAM, 0, RAM_SIZE);
 	if (!internalbios) {

@@ -31,6 +31,10 @@
 #define DEFAULT_VIDEOROM_FILE	"#videorom.bin"
 #define DEFAULT_IDEROM_FILE	"#ide_xt.bin"
 
+// Try to enable using KVM.
+// Note, that this will be undefined at the end of this file, if Fake86 is not built for linux
+#define USE_KVM
+
 
 //#define DO_NOT_FORCE_INLINE
 //#define DO_NOT_FORCE_UNREACHABLE
@@ -127,5 +131,8 @@ extern void UNREACHABLE_FATAL_ERROR ( void );
 #	define UNREACHABLE()	UNREACHABLE_FATAL_ERROR()
 #endif
 
+#if defined(USE_KVM) && !defined(__linux__)
+#undef USE_KVM
+#endif
 
 #endif

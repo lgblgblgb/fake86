@@ -70,6 +70,7 @@ static const uint8_t parity[0x100] = {
 };
 
 #ifdef USE_KVM
+#include "kvm.h"
 uint8_t *RAM;
 #else
 uint8_t RAM[RAM_SIZE];
@@ -132,6 +133,42 @@ static inline void decodeflagsword ( uint16_t x )
 	of  = (x >> 11) & 1;
 }
 
+#ifdef USE_KVM
+void cpu_regs_from_kvm ( void )
+{
+	regs.wordregs[regax] = KVM_GET_AX();
+	regs.wordregs[regbx] = KVM_GET_BX();
+	regs.wordregs[regcx] = KVM_GET_CX();
+	regs.wordregs[regdx] = KVM_GET_DX();
+	regs.wordregs[regsi] = KVM_GET_SI();
+	regs.wordregs[regdi] = KVM_GET_DI();
+	regs.wordregs[regbp] = KVM_GET_BP();
+	regs.wordregs[regsp] = KVM_GET_SP();
+	ip = KVM_GET_IP();
+	decodeflagsword(KVM_GET_FL());
+	segregs[regcs] = KVM_GET_CS();
+	segregs[regds] = KVM_GET_DS();
+	segregs[reges] = KVM_GET_ES();
+	segregs[regss] = KVM_GET_SS();
+}
+void cpu_regs_to_kvm ( void )
+{
+	KVM_SET_AX(regs.wordregs[regax]);
+	KVM_SET_BX(regs.wordregs[regbx]);
+	KVM_SET_CX(regs.wordregs[regcx]);
+	KVM_SET_DX(regs.wordregs[regdx]);
+	KVM_SET_SI(regs.wordregs[regsi]);
+	KVM_SET_DI(regs.wordregs[regdi]);
+	KVM_SET_BP(regs.wordregs[regbp]);
+	KVM_SET_SP(regs.wordregs[regsp]);
+	KVM_SET_IP(ip);
+	KVM_SET_FL(makeflagsword());
+	KVM_SET_CS(segregs[regcs]);
+	KVM_SET_DS(segregs[regds]);
+	KVM_SET_ES(segregs[reges]);
+	KVM_SET_SS(segregs[regss]);
+}
+#endif
 
 void write86(uint32_t addr32, uint8_t value) {
 	uint32_t tempaddr32 = addr32 & 0xFFFFF;

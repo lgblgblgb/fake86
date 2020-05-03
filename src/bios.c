@@ -151,7 +151,6 @@ static void bios_boot_interrupt ( void )
 }
 
 static int color = 7;
-#define MEMORY_SIZE sizeof(RAM)
 
 #if 0
 static struct biostime {
@@ -221,7 +220,7 @@ static void bios_reset ( void )
 	color = 0x4E;
 	bios_putstr("Fake86 internal BIOS (C)2020 LGB G\240bor L\202n\240rt                              [WIP]\n");
 	color = 7;
-	bios_printf("CPU type : %s\nMemory   : %dK\n", CPU_TYPE_STR, (int)(MEMORY_SIZE - 0x60000) >> 10);
+	bios_printf("CPU type : %s\nMemory   : %dK\n", CPU_TYPE_STR, (int)(RAM_SIZE - 0x60000) >> 10);
 	for (int a = 0; a < 0x100; a++) {
 		if (disk[a].inserted) {
 			bios_printf("Drive %02X : %s CHS=%d/%d/%d SIZE=%u%c %s\n",

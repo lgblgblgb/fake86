@@ -21,6 +21,8 @@
 #ifndef FAKE86_PARSECL_H_INCLUDED
 #define FAKE86_PARSECL_H_INCLUDED
 
+#include "config.h"
+
 extern uint16_t constanth;                                                                                                                                                                                           
 extern uint16_t constantw;
 extern uint8_t slowsystem;
@@ -29,6 +31,9 @@ extern uint32_t speed;
 extern uint8_t verbose;
 extern uint8_t useconsole;
 extern uint8_t usessource;
+#ifdef USE_KVM
+extern int usekvm;
+#endif
 
 extern uint8_t dohardreset;
 

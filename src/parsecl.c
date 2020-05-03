@@ -55,6 +55,10 @@ uint8_t verbose = 0;
 uint8_t useconsole = 0;
 // uint8_t cgaonly = 0;
 uint8_t usessource = 0;
+#ifdef USE_KVM
+int usekvm = 0;
+#endif
+
 
 static uint32_t hextouint(char *src) {
 	// should be converted to std lib stuff.
@@ -91,6 +95,9 @@ static void showhelp ( void )
 		"                   Otherwise, the default is floppy 0.\n"
 		"  -bios filename   Specify alternate BIOS ROM image to use.\n"
 		"  -internalbios    Use highly experimental internal BIOS (overrides -bios).\n"
+#ifdef USE_KVM
+		"  -kvm             Try to use KVM (WIP!)\n"
+#endif
 #ifdef NETWORKING_ENABLED
 #ifdef _WIN32
 		"  -net #           Enable ethernet emulation via winpcap, where # is the\n"
@@ -225,6 +232,9 @@ void parsecl ( int argc, char *argv[] )
 		else if (!strcmpi(argv[i], "-console"))		useconsole = 1;
 		else if (!strcmpi(argv[i], "-slowsys"))		slowsystem = 1;
 		else if (!strcmpi(argv[i], "-internalbios"))	internalbios = 1;
+#ifdef USE_KVM
+		else if (!strcmpi(argv[i], "-kvm"))		usekvm = 1;
+#endif
 		else if (!strcmpi(argv[i], "-oprom")) {
 			i++;
 			uint32_t tempuint = hextouint(argv[i++]);

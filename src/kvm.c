@@ -1,12 +1,29 @@
-#define _DEFAULT_SOURCE
+/*
+  Fake86: A portable, open-source 8086 PC emulator.
+  Copyright (C)2010-2013 Mike Chambers
+            (C)2020      Gabor Lenart "LGB"
 
-#define USE_KVM
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+
+#include "config.h"
 
 #ifdef USE_KVM
 
 #include <stdio.h>
 #include <errno.h>
-#include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <stdint.h>
@@ -17,21 +34,10 @@
 #include <sys/ioctl.h>
 #include <linux/kvm.h>
 
-#define MEMORY_SIZE	0x110000
+#include "kvm.h"
 
 
-
-struct kvm {
-	int	kvm_fd;
-	int	vm_fd;
-	int	vcpu_fd;
-	uint8_t	*mem;
-	struct kvm_run	 *kvm_run;
-	struct kvm_sregs sregs;
-	struct kvm_regs  regs;
-};
-
-static struct kvm kvm = {
+struct kvm kvm = {
 	.kvm_fd  = -1,
 	.vm_fd   = -1,
 	.vcpu_fd = -1,
@@ -39,34 +45,36 @@ static struct kvm kvm = {
 };
 
 
-
-static void get_regs ( void )
+static int get_regs ( void )
 {
         if (ioctl(kvm.vcpu_fd, KVM_GET_SREGS, &kvm.sregs) < 0) {
-		perror("KVM_GET_SREGS");
-		exit(1);
+		perror("KVM: GET_SREGS");
+		return 1;
 	}
 	if (ioctl(kvm.vcpu_fd, KVM_GET_REGS, &kvm.regs) < 0) {
-		perror("KVM_GET_REGS");
-		exit(1);
+		perror("KVM: GET_REGS");
+		return 1;
 	}
+	return 0;
 }
 
 
-static void set_regs ( void )
+static int set_regs ( void )
 {
+	kvm.regs.rflags |= 2;	// bit 1 of EFLAGS is always set
         if (ioctl(kvm.vcpu_fd, KVM_SET_SREGS, &kvm.sregs) < 0) {
-		perror("KVM_SET_SREGS");
-		exit(1);
+		perror("KVM: SET_SREGS");
+		return 1;
 	}
 	if (ioctl(kvm.vcpu_fd, KVM_SET_REGS, &kvm.regs) < 0) {
 		perror("KVM_SET_REGS");
-		exit(1);
+		return 1;
 	}
+	return 0;
 }
 
 
-static void kvm_uninit ( void )
+void kvm_uninit ( void )
 {
 	if (kvm.vcpu_fd >= 0) {
 		close(kvm.vcpu_fd);
@@ -81,18 +89,19 @@ static void kvm_uninit ( void )
 		kvm.kvm_fd = -1;
 	}
 	if (kvm.mem != MAP_FAILED) {
-		munmap(kvm.mem, MEMORY_SIZE);
+		munmap(kvm.mem, kvm.mem_size);
 		kvm.mem = MAP_FAILED;
 	}
 }
 
 
-static int kvm_init ( size_t mem_size )
+int kvm_init ( size_t mem_size )
 {
 	if (kvm.kvm_fd >= 0 || kvm.vm_fd >= 0 || kvm.vcpu_fd >= 0 || kvm.mem != MAP_FAILED) {
 		fprintf(stderr, "KVM: already intiailized, tried twice?\n");
 		return 1;
 	}
+	kvm.mem_size = mem_size;
 	kvm.kvm_fd = open("/dev/kvm", O_RDWR);
 	if (kvm.kvm_fd < 0) {
 		perror("KVM: Cannot open /dev/kvm");
@@ -107,7 +116,6 @@ static int kvm_init ( size_t mem_size )
 		fprintf(stderr, "KVM: API version mismatch: got %d but expected %d\n", api_ver, KVM_API_VERSION);
 		goto error;
 	}
-	printf("KVM: API version: %d\n", api_ver);
 	kvm.vm_fd = ioctl(kvm.kvm_fd, KVM_CREATE_VM, 0);
 	if (kvm.vm_fd < 0) {
 		perror("KVM: Cannot create VM");
@@ -122,7 +130,6 @@ static int kvm_init ( size_t mem_size )
 		perror("KVM: mmap() failed");
 		goto error;
 	}
-	printf("MAP: %p\n", kvm.mem);
 	//if (madvise(kvm.mem, mem_size, MADV_MERGEABLE))
 	//	perror("KVM: madvise() failed");
 	struct kvm_userspace_memory_region memreg;
@@ -152,6 +159,20 @@ static int kvm_init ( size_t mem_size )
 		perror("KVM: mmap kvm_run");
 		goto error;
 	}
+	if (get_regs())
+		return -1;
+	kvm.sregs.cs.selector = 0;
+	kvm.sregs.ds.selector = 0;
+	kvm.sregs.es.selector = 0;
+	kvm.sregs.ss.selector = 0;
+	kvm.sregs.cs.base = 0;
+	kvm.sregs.ds.base = 0;
+	kvm.sregs.es.base = 0;
+	kvm.sregs.ss.base = 0;
+	memset(&kvm.regs, 0, sizeof(kvm.regs));
+	if (set_regs())
+		return -1;
+	printf("KVM: successfully initialized, API version: %d\n", api_ver);
 	return 0;
 error:
 	kvm_uninit();
@@ -162,6 +183,19 @@ error:
 
 int kvm_run ( void )
 {
+	if (set_regs())
+		return -1;
+	printf("KVM: entering @ %Xh:%Xh\n", (unsigned int)kvm.sregs.cs.selector, (unsigned int)kvm.regs.rip);
+	if (ioctl(kvm.vcpu_fd, KVM_RUN, 0) < 0) {
+		perror("KVM: virtual machine cannot be run");
+		return -1;
+	}
+	if (get_regs())
+		return -1;
+	printf("KVM: VM exited with code %d at %Xh:%Xh\n", kvm.kvm_run->exit_reason, (unsigned int)kvm.sregs.cs.selector, (unsigned int)kvm.regs.rip);
+	return 0;
+#if 0
+
 	uint64_t memval = 0;
 
 	for (;;) {
@@ -210,63 +244,21 @@ int kvm_run ( void )
 
 
 	return 1;
+#endif
 }
 
 
 
-static void setup_test( void )
-{
-	get_regs();
-
-
-	printf("Testing real mode\n");
-
-        //if (ioctl(kvm.vcpu_fd, KVM_GET_SREGS, &kvm.sregs) < 0) {
-	//	perror("KVM_GET_SREGS");
-	//	exit(1);
-	//}
-
-	kvm.sregs.cs.selector = 0;
-	kvm.sregs.ds.selector = 0;
-	kvm.sregs.es.selector = 0;
-	kvm.sregs.ss.selector = 0;
-	kvm.sregs.cs.base = 0;
-	kvm.sregs.ds.base = 0;
-	kvm.sregs.es.base = 0;
-	kvm.sregs.ss.base = 0;
-
-        //if (ioctl(kvm.vcpu_fd, KVM_SET_SREGS, &kvm.sregs) < 0) {
-	//	perror("KVM_SET_SREGS");
-	//	exit(1);
-	//}
-
-	memset(&kvm.regs, 0, sizeof(kvm.regs));
-	/* Clear all FLAGS bits, except bit 1 which is always set. */
-	kvm.regs.rflags = 2;
-	kvm.regs.rip = 0x7C00;
-	kvm.regs.rsp = 0x400;
-
-	static const uint8_t instseq[] = { 0xb8, 0x76, 0x19, 0x8e, 0xc0, 0xf4 };
-
-	memcpy(kvm.mem + 0x7C00, instseq, sizeof(instseq));
-
-	//if (ioctl(kvm.vcpu_fd, KVM_SET_REGS, &kvm.regs) < 0) {
-	//	perror("KVM_SET_REGS");
-	//	exit(1);
-	//}
-	set_regs();
-
-	//memcpy(vm->mem, guest16, guest16_end-guest16);
-}
 	
 
 
 
-
+#if 0
 int main () {
 	kvm_init(MEMORY_SIZE);
 	setup_test();
 	kvm_run();
 }
+#endif
 
 #endif

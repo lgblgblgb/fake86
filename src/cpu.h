@@ -137,6 +137,8 @@ struct addrmodecache_s {
 
 #ifdef USE_KVM
 extern uint8_t *RAM;
+extern void cpu_regs_to_kvm ( void );
+extern void cpu_regs_from_kvm ( void );
 #else
 extern uint8_t RAM[RAM_SIZE];
 #endif
