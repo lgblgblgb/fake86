@@ -34,7 +34,7 @@
 
 struct i8253_s i8253;
 
-void out8253 (uint16_t portnum, uint8_t value) {
+static void out8253 (uint16_t portnum, uint8_t value) {
 	uint8_t curbyte = 0; // make gcc happy to have initialized variable :)
 	portnum &= 3;
 	switch (portnum) {
@@ -68,7 +68,7 @@ void out8253 (uint16_t portnum, uint8_t value) {
 	}
 }
 
-uint8_t in8253 (uint16_t portnum) {
+static uint8_t in8253 (uint16_t portnum) {
 	uint8_t curbyte;
 	portnum &= 3;
 	switch (portnum) {

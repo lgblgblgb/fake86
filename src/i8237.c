@@ -49,7 +49,7 @@ uint8_t read8237 (uint8_t channel) {
 	return ret;
 }
 
-void out8237 (uint16_t addr, uint8_t value) {
+static void out8237 (uint16_t addr, uint8_t value) {
 	uint8_t channel;
 #ifdef DEBUG_DMA
 	printf ("out8237(0x%X, %X);\n", addr, value);
@@ -107,7 +107,7 @@ void out8237 (uint16_t addr, uint8_t value) {
 		}
 }
 
-uint8_t in8237 (uint16_t addr) {
+static uint8_t in8237 (uint16_t addr) {
 #ifdef DEBUG_DMA
 	printf ("in8237(0x%X);\n", addr);
 #endif

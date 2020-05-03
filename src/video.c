@@ -680,7 +680,7 @@ static void outVGA (uint16_t portnum, uint8_t value) {
 		}
 }
 
-uint8_t inVGA (uint16_t portnum) {
+static uint8_t inVGA (uint16_t portnum) {
 	switch (portnum) {
 			case 0x3C1:
 				return (uint8_t)VGA_ATTR[portram[0x3C0]];
@@ -851,10 +851,10 @@ void writeVGA (uint32_t addr32, uint8_t value) {
 
 //uint8_t readmode;
 //uint32_t readmap;
-uint8_t readVGA (uint32_t addr32) {
+uint8_t readVGA (uint32_t addr32)
+{
 	uint32_t planesize;
 	planesize = 0x10000;
-
 	VGA_latch[0] = VRAM[addr32];
 	VGA_latch[1] = VRAM[addr32+planesize];
 	VGA_latch[2] = VRAM[addr32+planesize*2];

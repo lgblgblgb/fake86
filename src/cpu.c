@@ -69,8 +69,13 @@ static const uint8_t parity[0x100] = {
 	1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1
 };
 
-uint8_t RAM[RAM_SIZE], readonly[RAM_SIZE];
-uint8_t bootdrive = 0, hdcount = 0;
+#ifdef USE_KVM
+uint8_t *RAM;
+#else
+uint8_t RAM[RAM_SIZE];
+#endif
+
+uint8_t readonly[RAM_SIZE];
 static uint8_t hltstate = 0;
 static uint8_t /*opcode,*/ segoverride /*, reptype */;
 uint16_t segregs[4];
@@ -89,7 +94,6 @@ uint64_t totalexec;
 
 union _bytewordregs_ regs;
 
-uint8_t portram[0x10000];
 uint8_t running = 0;
 static uint8_t /*verbose,*/ didbootstrap = 0;
 //static uint8_t debugmode, showcsip, /*verbose,*/ mouseemu;
@@ -213,7 +217,7 @@ static inline void flag_log16(uint16_t value) {
 	of = 0; /* bitwise logic ops always clear carry and overflow */
 }
 
-static void flag_adc8(uint8_t v1, uint8_t v2, uint8_t v3) {
+static inline void flag_adc8(uint8_t v1, uint8_t v2, uint8_t v3) {
 
 	/* v1 = destination operand, v2 = source operand, v3 = carry flag */
 	uint16_t dst;
@@ -239,7 +243,7 @@ static void flag_adc8(uint8_t v1, uint8_t v2, uint8_t v3) {
 	}
 }
 
-static void flag_adc16(uint16_t v1, uint16_t v2, uint16_t v3) {
+static inline void flag_adc16(uint16_t v1, uint16_t v2, uint16_t v3) {
 
 	uint32_t dst;
 
@@ -264,7 +268,7 @@ static void flag_adc16(uint16_t v1, uint16_t v2, uint16_t v3) {
 	}
 }
 
-static void flag_add8(uint8_t v1, uint8_t v2) {
+static inline void flag_add8(uint8_t v1, uint8_t v2) {
 	/* v1 = destination operand, v2 = source operand */
 	uint16_t dst;
 
@@ -289,7 +293,7 @@ static void flag_add8(uint8_t v1, uint8_t v2) {
 	}
 }
 
-static void flag_add16(uint16_t v1, uint16_t v2) {
+static inline void flag_add16(uint16_t v1, uint16_t v2) {
 	/* v1 = destination operand, v2 = source operand */
 	uint32_t dst;
 
@@ -314,7 +318,7 @@ static void flag_add16(uint16_t v1, uint16_t v2) {
 	}
 }
 
-static void flag_sbb8(uint8_t v1, uint8_t v2, uint8_t v3) {
+static inline void flag_sbb8(uint8_t v1, uint8_t v2, uint8_t v3) {
 
 	/* v1 = destination operand, v2 = source operand, v3 = carry flag */
 	uint16_t dst;
@@ -341,7 +345,7 @@ static void flag_sbb8(uint8_t v1, uint8_t v2, uint8_t v3) {
 	}
 }
 
-static void flag_sbb16(uint16_t v1, uint16_t v2, uint16_t v3) {
+static inline void flag_sbb16(uint16_t v1, uint16_t v2, uint16_t v3) {
 
 	/* v1 = destination operand, v2 = source operand, v3 = carry flag */
 	uint32_t dst;
@@ -490,7 +494,7 @@ static inline void op_sbb16(void) {
 	flag_sbb16(oper1, oper2, cf);
 }
 
-static void getea(uint8_t rmval) {
+static inline void getea(uint8_t rmval) {
 	uint32_t tempea;
 
 	tempea = 0;
@@ -863,7 +867,7 @@ static uint16_t op_grp2_16(uint8_t cnt) {
 	return (uint16_t)s & 0xFFFF;
 }
 
-static void op_div8(uint16_t valdiv, uint8_t divisor) {
+static inline void op_div8(uint16_t valdiv, uint8_t divisor) {
 	if (divisor == 0) {
 		intcall86(0);
 		return;
@@ -878,7 +882,7 @@ static void op_div8(uint16_t valdiv, uint8_t divisor) {
 	regs.byteregs[regal] = valdiv / (uint16_t)divisor;
 }
 
-static void op_idiv8(uint16_t valdiv, uint8_t divisor) {
+static inline void op_idiv8(uint16_t valdiv, uint8_t divisor) {
 
 	uint16_t s1;
 	uint16_t s2;
@@ -912,7 +916,7 @@ static void op_idiv8(uint16_t valdiv, uint8_t divisor) {
 	regs.byteregs[regal] = (uint8_t)d1;
 }
 
-static void op_grp3_8(void) {
+static inline void op_grp3_8(void) {
 	oper1 = signext(oper1b);
 	oper2 = signext(oper2b);
 	switch (reg) {
@@ -1040,7 +1044,7 @@ static void op_idiv16(uint32_t valdiv, uint16_t divisor) {
 	regs.wordregs[regdx] = d2;
 }
 
-static void op_grp3_16(void) {
+static inline void op_grp3_16(void) {
 	switch (reg) {
 	case 0:
 	case 1: /* TEST */
@@ -1121,7 +1125,7 @@ static void op_grp3_16(void) {
 	}
 }
 
-static void op_grp5(void) {
+static inline void op_grp5(void) {
 	switch (reg) {
 		case 0: /* INC Ev */
 			{
@@ -1179,12 +1183,17 @@ static void op_grp5(void) {
 //static FILE *logout;
 //static uint8_t printops = 0;
 
+uint16_t cpu_last_int_seg, cpu_last_int_ip;
+
 static void intcall86(uint8_t intnum) {
 	if (!internalbios) {
 	static uint16_t lastint10ax;
 	uint16_t oldregax;
 	// this didintr seems not to be used just a value assigned ..
 	//didintr = 1;
+
+	cpu_last_int_seg = segregs[regcs];
+	cpu_last_int_ip  = saveip;	// LGB
 
 	if (intnum == 0x19)
 		didbootstrap = 1;

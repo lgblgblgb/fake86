@@ -135,16 +135,20 @@ struct addrmodecache_s {
 
 #define RAM_SIZE 0x100000
 
-extern uint8_t portram[0x10000];
+#ifdef USE_KVM
+extern uint8_t *RAM;
+#else
 extern uint8_t RAM[RAM_SIZE];
+#endif
 extern uint8_t readonly[RAM_SIZE];
 extern uint16_t segregs[4];
 extern uint8_t cf;
 extern uint8_t running;
 extern uint32_t makeupticks;
 extern uint64_t totalexec;
-extern uint8_t bootdrive;
-extern uint8_t hdcount;
+
+extern uint16_t cpu_last_int_seg, cpu_last_int_ip;
+
 
 extern void write86 (uint32_t addr32, uint8_t value);
 extern void reset86(void);

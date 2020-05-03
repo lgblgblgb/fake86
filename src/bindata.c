@@ -1,4 +1,6 @@
-/* this is a generated file, do not edit by hand */
+/* About src/bindata.c and src/bindata.h
+ * There are generated files, >> DO NOT EDIT << ...
+ * ... instead, do this to recreate these files: make genbininclude */
 #include "bindata.h"
 const uint8_t mem_asciivga_dat [32768] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

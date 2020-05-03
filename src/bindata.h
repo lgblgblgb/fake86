@@ -1,4 +1,6 @@
-/* this is a generated file, do not edit by hand */
+/* About src/bindata.c and src/bindata.h
+ * There are generated files, >> DO NOT EDIT << ...
+ * ... instead, do this to recreate these files: make genbininclude */
 #ifndef FAKE86_BINARYCONTENTFILE_INCLUDED
 #define FAKE86_BINARYCONTENTFILE_INCLUDED
 #include <stdint.h>

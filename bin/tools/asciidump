@@ -13,7 +13,9 @@ echo $TMP
 
 rm -f $C_FILE $H_FILE $TMP || exit 1
 
-echo "/* this is a generated file, do not edit by hand */" > $C_FILE
+echo "/* About $C_FILE and $H_FILE" > $C_FILE
+echo " * There are generated files, >> DO NOT EDIT << ..." >> $C_FILE
+echo " * ... instead, do this to recreate these files: make genbininclude */" >> $C_FILE
 cp $C_FILE $H_FILE
 
 echo "#ifndef FAKE86_BINARYCONTENTFILE_INCLUDED" >> $H_FILE

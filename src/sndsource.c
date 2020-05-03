@@ -86,6 +86,7 @@ static void outsoundsource ( uint16_t portnum, uint8_t value )
 
 static uint8_t insoundsource ( uint16_t portnum )
 {
+	(void)portnum;
 	return ssourcefull();
 }
 

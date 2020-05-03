@@ -30,6 +30,7 @@
 #include "video.h"
 #include "sermouse.h"
 #include "cpu.h"
+#include "ports.h"
 #include "i8259.h"
 #include "render.h"
 
@@ -143,7 +144,7 @@ static int translatescancode ( /*uint16_t keyval*/ SDL_Keycode keyval )
 
 static uint8_t buttons = 0;
 
-void mousegrabtoggle ( void )
+static void mousegrabtoggle ( void )
 {
 	if (usegrabmode) {
 		usegrabmode = 0;

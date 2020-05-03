@@ -36,13 +36,13 @@
 
 struct blaster_s blaster;
 
-void bufNewData (uint8_t value) {
+static void bufNewData (uint8_t value) {
 	if (blaster.memptr >= sizeof (blaster.mem) ) return;
 	blaster.mem[blaster.memptr] = value;
 	blaster.memptr++;
 }
 
-void setsampleticks(void) {
+static void setsampleticks(void) {
 	if (blaster.samplerate == 0) {
 			blaster.sampleticks = 0;
 			return;
@@ -50,7 +50,7 @@ void setsampleticks(void) {
 	blaster.sampleticks = hostfreq / (uint64_t) blaster.samplerate;
 }
 
-void cmdBlaster (uint8_t value) {
+static void cmdBlaster (uint8_t value) {
 	uint8_t recognized = 1;
 	if (blaster.waitforarg) {
 			switch (blaster.lastcmdval) {
@@ -180,7 +180,7 @@ void cmdBlaster (uint8_t value) {
 
 static uint8_t mixer[256], mixerindex = 0;
 
-void outBlaster (uint16_t portnum, uint8_t value) {
+static void outBlaster (uint16_t portnum, uint8_t value) {
 #ifdef DEBUG_BLASTER
 	printf ("[DEBUG] outBlaster: port %Xh, value %02X\n", portnum, value);
 #endif
@@ -224,7 +224,7 @@ void outBlaster (uint16_t portnum, uint8_t value) {
 		}
 }
 
-uint8_t inBlaster (uint16_t portnum) {
+static uint8_t inBlaster (uint16_t portnum) {
 	uint8_t ret = 0;
 #ifdef DEBUG_BLASTER
 	static uint16_t lastread = 0;
@@ -301,7 +301,7 @@ int16_t getBlasterSample(void) {
 		return (int16_t)blaster.sample - 128;
 }
 
-void mixerReset(void) {
+static void mixerReset(void) {
 	memset (blaster.mixer.reg, 0, sizeof (blaster.mixer.reg) );
 	blaster.mixer.reg[0x22] = blaster.mixer.reg[0x26] = blaster.mixer.reg[0x04] = (4 << 5) | (4 << 1);
 }

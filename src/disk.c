@@ -31,6 +31,9 @@
 
 struct struct_drive disk[256];
 
+uint8_t bootdrive = 0, hdcount = 0, fdcount = 0;
+
+
 static uint8_t sectorbuffer[512];
 
 
@@ -97,6 +100,8 @@ uint8_t insertdisk ( uint8_t drivenum, char *filename )
 	disk[drivenum].sects = sects;
 	if (drivenum >= 0x80)
 		hdcount++;
+	else
+		fdcount++;
 	printf(
 		"DISK: Disk 0%02Xh has been attached %s from file %s size=%luK, CHS=%d,%d,%d\n",
 		drivenum,
@@ -121,6 +126,10 @@ void ejectdisk ( uint8_t drivenum )
 	if (disk[drivenum].inserted) {
 		hostfs_close(disk[drivenum].diskfile);
 		disk[drivenum].inserted = 0;
+		if (drivenum >= 0x80)
+			hdcount--;
+		else
+			fdcount--;
 	}
 }
 

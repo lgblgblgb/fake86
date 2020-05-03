@@ -168,10 +168,7 @@ static int inithardware( void )
 		initpcap();
 #endif
 	printf("Initializing emulated hardware:\n");
-	memset(port_write_callback, 0, sizeof(port_write_callback));
-	memset(port_read_callback, 0, sizeof(port_read_callback));
-	memset(port_write_callback16, 0, sizeof(port_write_callback16));
-	memset(port_read_callback16, 0, sizeof(port_read_callback16));
+	ports_init();
 	printf("  - Intel 8253 timer: ");
 	init8253();
 	puts("OK");

@@ -33,7 +33,7 @@
 
 struct structpic i8259;
 
-uint8_t in8259(uint16_t portnum) {
+static uint8_t in8259(uint16_t portnum) {
 	switch (portnum & 1) {
 		   case 0:
 			if (i8259.readmode == 0)
@@ -46,7 +46,7 @@ uint8_t in8259(uint16_t portnum) {
 	return 0;
 }
 
-void out8259(uint16_t portnum, uint8_t value) {
+static void out8259(uint16_t portnum, uint8_t value) {
 	 uint8_t i;
 	 switch (portnum & 1) {
 		case 0:

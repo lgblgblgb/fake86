@@ -31,6 +31,7 @@
 #include "mutex.h"
 #include "video.h"
 #include "cpu.h"
+#include "ports.h"
 
 // For texture size we want to use the largest width and height for
 // any emulated PC mode!! Since we will update only parts of this
@@ -131,7 +132,7 @@ int initscreen ( const char *ver )
 
 //uint32_t prestretch[1024][1024];
 //uint32_t nw, nh; //native width and height, pre-stretching (i.e. 320x200 for mode 13h)
-void createscalemap(void) {
+static void createscalemap(void) {
 #if 0
 	uint32_t srcx, srcy, dstx, dsty, scalemapptr;
 	double xscale, yscale;

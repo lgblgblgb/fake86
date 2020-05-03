@@ -37,6 +37,8 @@ struct struct_drive {
 
 extern struct struct_drive disk[256];
 
+extern uint8_t bootdrive, hdcount, fdcount;
+
 extern uint8_t	insertdisk  ( uint8_t drivenum, char *filename );
 extern void	diskhandler ( void );
 extern void	ejectdisk   ( uint8_t drivenum );

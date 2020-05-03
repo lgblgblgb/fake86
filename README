@@ -2,21 +2,52 @@ Fake86: A portable, open-source 8086 PC emulator.
 Copyright (C)2010-2013 Mike Chambers
 Copyright (C)2020      Gabor Lenart "LGB"
 
-Fake86+: Please note, that this is not the original Fake86.
-It's under heavy refactoring by me (LGB). Currently it's already
-ported to SDL2, with many souce clean-up and reorganization, and
-a more mature build system.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Fake86+: Please note, that this is not the original Fake86.       !!
+!! It's under heavy refactoring by me (LGB). Currently it's already  !!
+!! ported to SDL2, with many souce clean-up and reorganization, and  !!
+!! a more mature build system. I have some kind of divergent goals   !!
+!! you may expect from Fake86. Thus you may want to use the original !!
+!! Fake86 or forks done by others.                                   !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-However please note, that my main focus is on UNIX and UNIX-like
-OSes, so I can't care about the Windows version too much (I don't
-even have Windows!) though I can build it with my new Makefile
-using Mingw cross-compiler running on Linux to generate Windows
-executable :) You can try the same even with Windows by using
-WSL, or maybe natively by installing Mingw in the form of MSYS
-on your Windows.
+Key features of my fork:
 
-Other than that, it's my fork, my rules + goals, maybe not so
-popular among other people, I can admit, for sure!
+* Using SDL2 instead of SDL1
+* Linux/UNIX oriented, Windows builds must be done with cross-compiling
+  on Linux/UNIX (though WSL and/or MSYS2 on Windows are possibilities)
+  using Mingw
+* Serious code clean-up and reorganization
+* Sooner or later migrate over my own (internal) BIOS completely.
+  So no crude hacks will be needed anymore.
+* Trying out other ways of CPU emulation _optionally_ like KVM too
+  (just because I'm interested in learning stuffs like this).
+
+Main goals, kinda roadmap (only some ideas, far from being a complete list):
+
+* Port to SDL2 [DONE]
+* Move file operations to SDL2 [DONE]
+* Move thread handling to SDL2 [TODO]
+* Clean up source indenting [IN-PROGRESS]
+* Re-orgranize the tons of used global variables (maybe into structs) [TODO]
+* Kill as much as possible non-static globals [IN-PROGRESS]
+* Clean up ugly externs everywhere, have proper .h files [DONE]
+* Better Makefile and stuffs [DONE]
+* Cross-compilation for Windows on UNIX-like OS [DONE]
+* Internal own Fake-BIOS, this is a BIG task [IN-PROGRESS]
+* Clean up internal logic, layout and implementation of ... well everything [IN-PROGRESS]
+* Better separation of various tasks (ie CPU emulator is CPU emulator ONLY) [IN-PROGRESS]
+* Maybe rewrite CPU emulation fully, to be faster/more clener [TODO]
+* Enhance emulation of various things [TODO]
+* Kill various 'hacks' needed because of emulation problems [TODO]
+* Provide "emulation hooks" internal OS (DOS) can use to interact with the host [TODO]
+* Enhance emulation performance [TODO]
+* Introduce some crude speed control (a given emulated CPU clock or so) [TODO]
+* PC-AT like features, both on hardware (including HMA!) and software (BIOS) level [TODO]
+* Probably supporting 286 protected mode later [TODO]
+* Text-only mode for emulation from a terminal/console! [TODO]
+* Wild idea, include optinally some DOS implementation though it sounds like DOSBOX a bit [TODO/FORGET?]
+* Wild idea, allow optinal KVM accelerated "CPU implementation" on Linux [TODO]
 
 ===============================================================================
 
