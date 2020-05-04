@@ -109,11 +109,8 @@ static inline void consolehelp ( void ) {
 }
 
 
-#ifdef _WIN32
-void  runconsole ( void *dummy ) {
-#else
-void *runconsole ( void *dummy ) {
-#endif
+int ConsoleThread( void *ptr )
+{
 	char inputline[1024];
 	puts("\nFake86 management console\nType \"help\" for a summary of commands.");
 	while (running) {
@@ -149,7 +146,5 @@ void *runconsole ( void *dummy ) {
 		}
 	}
 	puts("Terminating console thread.");
-#ifndef _WIN32
-	return NULL;
-#endif
+	return 0;
 }

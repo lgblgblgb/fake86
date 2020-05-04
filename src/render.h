@@ -26,6 +26,10 @@
 extern SDL_PixelFormat	*sdl_pixfmt;
 extern SDL_Window	*sdl_win;
 
+#ifdef _WIN32
+//extern CRITICAL_SECTION screenmutex;
+#endif
+
 extern uint8_t	renderbenchmark;
 extern uint8_t	scrmodechange;
 extern uint32_t	framedelay;

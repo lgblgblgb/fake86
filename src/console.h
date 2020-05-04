@@ -21,10 +21,6 @@
 #ifndef FAKE86_CONSOLE_H_INCLUDED
 #define FAKE86_CONSOLE_H_INCLUDED
 
-#ifdef _WIN32
-extern void runconsole (void *dummy);
-#else
-extern void *runconsole (void *dummy);
-#endif
+extern int ConsoleThread ( void *ptr );
 
 #endif

@@ -32,14 +32,15 @@
 
 #include "mutex.h"
 #ifdef _WIN32
-	extern CRITICAL_SECTION screenmutex;
+	//extern CRITICAL_SECTION screenmutex;
 #	include "win32/menus.h"
 #else
 #	include <unistd.h>
-#	ifndef __APPLE__
+#	if !defined(__APPLE__) && defined(USE_XINITTHREADS)
 #		include <X11/Xlib.h>
+#		warning "Using USE_XINITTHREADS"
 #	endif
-	static pthread_t consolethread;
+	//static pthread_t consolethread;
 #endif
 
 #include "fake86_release.h"
@@ -68,13 +69,8 @@
 #	include "kvm.h"
 #endif
 
-//uint64_t lasttick;
 static uint64_t starttick, endtick;
-//uint8_t dohardreset = 0;
-//uint8_t usessource = 0;
 
-//uint8_t cgaonly = 0;
-//uint8_t useconsole = 0;
 
 #ifdef DO_NOT_FORCE_UNREACHABLE
 void UNREACHABLE_FATAL_ERROR ( void )
@@ -84,61 +80,6 @@ void UNREACHABLE_FATAL_ERROR ( void )
 }
 #endif
 
-#if 0
-static uint32_t loadbinary (uint32_t addr32, const char *filename, uint8_t roflag)
-{
-	return hostfs_load_binary(filename, RAM + addr32, 1, 0x10000, "ROM");
-
-	HOSTFS_FILE *file = hostfs_open(filename, "rb");
-	if (!file)
-		return 0;
-	size_t readsize = hostfs_size(file);
-	if (readsize > 0x10000 || readsize <= 0) {
-		hostfs_close(file);
-		return 0;
-	}
-	size_t ret = hostfs_read(file, RAM + addr32, 1, readsize);
-	hostfs_close(file);
-	if (ret != readsize)
-		return 0;
-	memset(readonly + addr32, roflag, readsize);
-	return readsize;
-#if 0
-	FILE *binfile = fopen (filename, "rb");
-	if (binfile == NULL)
-		return 0;
-	fseek (binfile, 0, SEEK_END);
-	long readsize = ftell (binfile);
-	if (readsize > 0x10000 || readsize <= 0) {
-		fclose(binfile);
-		return 0;
-	}
-	fseek (binfile, 0, SEEK_SET);
-	long ret = fread(RAM + addr32, 1, readsize, binfile);
-	fclose (binfile);
-	if (ret != readsize)
-		return 0;
-	memset(readonly + addr32, roflag, readsize);
-	return readsize;
-#endif
-}
-#endif
-
-#if 0
-uint32_t loadrom (uint32_t addr32, const char *filename, uint8_t failure_fatal) {
-	int readsize = hostfs_load_binary(filename, RAM + addr32, 1, 0x10000, "ROM");
-	if (readsize <= 0) {
-		if(failure_fatal)
-			fprintf(stderr, "FATAL: Unable to load %s\n", filename);
-		else
-			printf("WARNING: Unable to load %s\n", filename);
-		return 0;
-	} else {
-		printf("Loaded %s at 0x%05X (%d KB)\n", filename, addr32, readsize >> 10);
-		return readsize;
-	}
-}
-#endif
 
 static uint32_t loadbios ( const char *filename )
 {
@@ -152,17 +93,6 @@ static uint32_t loadbios ( const char *filename )
 	return readsize;
 }
 
-#if 0
-static void printbinary (uint8_t value) {
-	int8_t curbit;
-	for (curbit=7; curbit>=0; curbit--) {
-		if ((value >> curbit) & 1)
-			printf ("1");
-		else
-			printf ("0");
-	}
-}
-#endif
 
 static int inithardware( void )
 {
@@ -211,15 +141,10 @@ static int inithardware( void )
 	return 0;
 }
 
-//uint8_t audiobufferfilled(void);
 
-#ifdef _WIN32
-//void initmenus(void);
-static void EmuThread (void *dummy) {
-#else
-static pthread_t emuthread;
-static void *EmuThread (void *dummy) {
-#endif
+
+static int EmuThread(void *ptr)
+{
 #ifdef USE_KVM
 	if (usekvm)
 		while (running) {
@@ -278,9 +203,7 @@ static void *EmuThread (void *dummy) {
 			dohardreset = 0;
 		}
 	}
-#ifndef _WIN32
-	return NULL;
-#endif
+	return 0;
 }
 
 
@@ -334,27 +257,24 @@ int main ( int argc, char *argv[] )
 	running = 1;
 	reset86();
 	puts("OK!");
-#if !defined(_WIN32) && !defined(__APPLE__)
+#if !defined(_WIN32) && !defined(__APPLE__) && defined(USE_XINITTHREADS)
 	XInitThreads();
 #endif
 	if (inithardware())
 		return -1;
 #ifdef _WIN32
 	initmenus();
-	InitializeCriticalSection(&screenmutex);
+	//InitializeCriticalSection(&screenmutex);
 #endif
 	if (useconsole) {
-#ifdef _WIN32
-		_beginthread(runconsole, 0, NULL);
-#else
-		pthread_create(&consolethread, NULL, (void*)runconsole, NULL);
-#endif
+		if (!SDL_CreateThread(ConsoleThread, "Fake86ConsoleThread", NULL)) {
+			fprintf(stderr, "WARNING: console thread cannot be created, console will be unavailable: %s\n", SDL_GetError());
+		}
 	}
-#ifdef _WIN32
-		_beginthread(EmuThread, 0, NULL);
-#else
-		pthread_create(&emuthread, NULL, (void*)EmuThread, NULL);
-#endif
+	if (!SDL_CreateThread(EmuThread, "Fake86EmuThread", NULL)) {
+		fprintf(stderr, "Could not create the main emuthread: %s\n", SDL_GetError());
+		return -1;
+	}
 	lasttick = starttick = SDL_GetTicks();
 	while (running) {
 		handleinput();

@@ -17,7 +17,7 @@ CFLAGS_WIN	= -std=c11 -Ofast -Wall -pipe -D_DEFAULT_SOURCE $(NETWORKEMU)
 GENFLAGS	= -fno-common
 GENFLAGS_WIN	= -fno-common
 INCLUDE		= -Isrc
-LIBS		= -lpthread -lX11
+LIBS		= -lX11
 LIBS_WIN	=
 SDL_CFLAGS	= $(shell sdl2-config --cflags)
 SDL_LIBS	= $(shell sdl2-config --libs)

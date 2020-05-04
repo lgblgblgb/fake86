@@ -31,10 +31,18 @@
 #define DEFAULT_VIDEOROM_FILE	"#videorom.bin"
 #define DEFAULT_IDEROM_FILE	"#ide_xt.bin"
 
-// Try to enable using KVM.
+// Try to enable using KVM (only compiles support. you still need -kvm switch to use that then!).
 // Note, that this will be undefined at the end of this file, if Fake86 is not built for linux
+// Highly experimental, and not work at all!!!!
 #define USE_KVM
 
+// Protect video emulation thread with a mutex when accessing screen.
+// Currently it's not needed, as other parts would effect the screen from the main thread in the old Fake86 is not used anymore.
+//#define USE_SCREEN_MUTEX
+
+// On UNIX (X11) platform, XInitThreads may be needed to use multi-threaded program.
+// Note: if you define this, it won't be used on Windows and OSX platforms, no need to worry.
+//#define USE_XINITTHREADS
 
 //#define DO_NOT_FORCE_INLINE
 //#define DO_NOT_FORCE_UNREACHABLE

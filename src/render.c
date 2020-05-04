@@ -42,11 +42,16 @@
 #define TEXTURE_HEIGHT	480
 #define PIXEL_FORMAT	SDL_PIXELFORMAT_ARGB8888
 
+#if 0
 #ifdef _WIN32
 CRITICAL_SECTION screenmutex;
 #else
-static pthread_t vidthread;
+//static pthread_t vidthread;
 static pthread_mutex_t screenmutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
+#endif
+#ifdef USE_SCREEN_MUTEX
+static SDL_mutex *screenmutex = NULL;
 #endif
 
 static uint8_t regenscalemap = 1;
@@ -56,11 +61,7 @@ uint32_t framedelay = 20;
 uint8_t scrmodechange = 0, noscale = 0, nosmooth = 1, renderbenchmark = 0;
 static char windowtitle[128];
 
-#ifdef _WIN32
-static void VideoThread (void *dummy);
-#else
-static void *VideoThread (void *dummy);
-#endif
+static int VideoThread( void *ptr );
 
 SDL_Window   *sdl_win = NULL;
 static SDL_Renderer *sdl_ren = NULL;
@@ -121,12 +122,17 @@ int initscreen ( const char *ver )
 		fprintf(stderr, "FATAL: Cannot initialize CGA subsystem\n");
 		return -1;
 	}
-#ifdef _WIN32
-	InitializeCriticalSection(&screenmutex);
-	_beginthread(VideoThread, 0, NULL);
-#else
-	pthread_create(&vidthread, NULL, (void *) VideoThread, NULL);
+#ifdef USE_SCREEN_MUTEX
+	screenmutex = SDL_CreateMutex();
+	if (!screenmutex) {
+		fprintf(stderr, "FATAL: Cannot create mutex for the video thread: %s\n", SDL_GetError());
+		return -1;
+	}
 #endif
+	if (!SDL_CreateThread(VideoThread, "Fake86VideoThread", NULL)) {
+		fprintf(stderr, "FATAL: Cannot create video thread: %s\n", SDL_GetError());
+		return -1;
+	}
 	return 0;
 }
 
@@ -160,11 +166,9 @@ static void createscalemap(void) {
 }
 
 static void draw(void);
-#ifdef _WIN32
-static void VideoThread (void *dummy) {
-#else
-static void *VideoThread (void *dummy) {
-#endif
+
+static int VideoThread( void *ptr )
+{
 	uint32_t cursorprevtick, cursorcurtick, delaycalc;
 	cursorprevtick = SDL_GetTicks();
 	cursorvisible = 0;
@@ -179,11 +183,17 @@ static void *VideoThread (void *dummy) {
 		if (updatedscreen || renderbenchmark) {
 			updatedscreen = 0;
 			//if (screen != NULL) {
-				MutexLock (screenmutex);
+#ifdef USE_SCREEN_MUTEX
+				//MutexLock (screenmutex);
+				SDL_LockMutex(screenmutex);
+#endif
 				if (regenscalemap)
 					createscalemap();
 				draw();
-				MutexUnlock(screenmutex);
+#ifdef USE_SCREEN_MUTEX
+				//MutexUnlock(screenmutex);
+				SDL_UnlockMutex(screenmutex);
+#endif
 			//}
 			totalframes++;
 		}
@@ -194,9 +204,7 @@ static void *VideoThread (void *dummy) {
 			SDL_Delay(delaycalc);
 		}
 	}
-#ifndef _WIN32
-	return NULL;
-#endif
+	return 0;
 }
 
 #ifdef _WIN32

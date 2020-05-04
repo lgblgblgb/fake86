@@ -26,7 +26,7 @@
 #include <windows.h>
 #include <process.h>
 #else
-#include <pthread.h>
+//#include <pthread.h>
 #endif
 #include <stdint.h>
 #include <stdio.h>
