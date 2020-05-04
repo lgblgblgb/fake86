@@ -22,15 +22,16 @@
 
 #include "config.h"
 #include <SDL.h>
-#ifdef _WIN32
-#include <windows.h>
-#include <process.h>
-#else
-//#include <pthread.h>
-#endif
+//#ifdef _WIN32
+//#include <windows.h>
+//#include <process.h>
+//#else
+////#include <pthread.h>
+//#endif
 #include <stdint.h>
 #include <stdio.h>
-#include <memory.h>
+//#include <memory.h>
+#include <string.h>
 
 #include "audio.h"
 

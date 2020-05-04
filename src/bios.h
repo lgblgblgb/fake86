@@ -21,6 +21,8 @@
 #ifndef FAKE86_BIOS_H_INCLUDED
 #define FAKE86_BIOS_H_INCLUDED
 
+#include <stdint.h>
+
 extern int internalbios;
 extern int internalbiostrapseg;
 

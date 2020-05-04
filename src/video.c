@@ -71,14 +71,14 @@ static inline uint32_t rgb(uint8_t r, uint8_t g, uint8_t b) {
 void vidinterrupt(void) {
 	uint32_t tempcalc, memloc, n;
 	updatedscreen = 1;
-	switch (regs.byteregs[regah]) { //what video interrupt function?
+	switch (CPU_AH) { //what video interrupt function?
 			case 0: //set video mode
 				if (verbose) {
-						printf ("Set video mode %02Xh\n", regs.byteregs[regal]);
+						printf ("Set video mode %02Xh\n", CPU_AL);
 					}
 				VGA_SC[0x4] = 0; //VGA modes are in chained mode by default after a mode switch
-				//regs.byteregs[regal] = 3;
-				switch (regs.byteregs[regal] & 0x7F) {
+				//CPU_AL = 3;
+				switch (CPU_AL & 0x7F) {
 						case 0: //40x25 mono text
 							videobase = textbase;
 							cols = 40;
@@ -142,8 +142,10 @@ void vidinterrupt(void) {
 									RAM[tempcalc] = 0;
 									RAM[tempcalc+1] = blankattr;
 								}
-							if (regs.byteregs[regal]==4) portram[0x3D9] = 48;
-							else portram[0x3D9] = 0;
+							if (CPU_AL == 4)
+								portram[0x3D9] = 48;
+							else
+								portram[0x3D9] = 0;
 							break;
 						case 6:
 							videobase = textbase;
@@ -176,10 +178,11 @@ void vidinterrupt(void) {
 							vidcolor = 1;
 							vidgfxmode = 1;
 							blankattr = 0;
-							if ( (regs.byteregs[regal]&0x80) ==0) for (tempcalc = videobase; tempcalc<videobase+65535; tempcalc+=2) {
-										RAM[tempcalc] = 0;
-										RAM[tempcalc+1] = blankattr;
-									}
+							if ((CPU_AL & 0x80) == 0)
+								for (tempcalc = videobase; tempcalc<videobase+65535; tempcalc+=2) {
+									RAM[tempcalc] = 0;
+									RAM[tempcalc+1] = blankattr;
+								}
 							portram[0x3D8] = portram[0x3D8] & 0xFE;
 							break;
 						case 0xD: //320x200 16-color
@@ -198,14 +201,14 @@ void vidinterrupt(void) {
 							portram[0x3D8] = portram[0x3D8] & 0xFE;
 							break;
 					}
-				vidmode = regs.byteregs[regal] & 0x7F;
+				vidmode = CPU_AL & 0x7F;
 				RAM[0x449] = vidmode;
 				RAM[0x44A] = (uint8_t) cols;
 				RAM[0x44B] = 0;
 				RAM[0x484] = (uint8_t) (rows - 1);
 				cursx = 0;
 				cursy = 0;
-				if ( (regs.byteregs[regal] & 0x80) == 0x00) {
+				if ((CPU_AL & 0x80) == 0x00) {
 						memset (&RAM[0xA0000], 0, 0x1FFFF);
 						memset (VRAM, 0, 262144);
 					}
@@ -238,21 +241,21 @@ void vidinterrupt(void) {
 #endif
 				break;
 			case 0x10: //VGA DAC functions
-				switch (regs.byteregs[regal]) {
+				switch (CPU_AL) {
 						case 0x10: //set individual DAC register
-							palettevga[getreg16 (regbx) ] = rgb((regs.byteregs[regdh] & 63) << 2, (regs.byteregs[regch] & 63) << 2, (regs.byteregs[regcl] & 63) << 2);
+							palettevga[CPU_BX] = rgb((CPU_DH & 63) << 2, (CPU_CH & 63) << 2, (CPU_CL & 63) << 2);
 							break;
 						case 0x12: //set block of DAC registers
-							memloc = segregs[reges]*16+getreg16 (regdx);
-							for (n=getreg16 (regbx); n< (uint32_t) (getreg16 (regbx) +getreg16 (regcx) ); n++) {
-									palettevga[n] = rgb(read86(memloc) << 2, read86(memloc + 1) << 2, read86(memloc + 2) << 2);
-									memloc += 3;
-								}
+							memloc = CPU_ES * 16 + CPU_DX;
+							for (n = CPU_BX; n < (uint32_t)(CPU_BX + CPU_CX); n++) {
+								palettevga[n] = rgb(read86(memloc) << 2, read86(memloc + 1) << 2, read86(memloc + 2) << 2);
+								memloc += 3;
+							}
 					}
 				break;
 			case 0x1A: //get display combination code (ps, vga/mcga)
-				regs.byteregs[regal] = 0x1A;
-				regs.byteregs[regbl] = 0x8;
+				CPU_AL = 0x1A;
+				CPU_BL = 0x8;
 				break;
 		}
 }
@@ -271,19 +274,6 @@ int initcga ( void )
 		fontcga = mem_asciivga_dat;
 	} else
 		fontcga = fdef;
-#if 0
-	FILE *fontfile = fopen(PATH_DATAFILES "asciivga.dat", "rb");
-	if (fontfile == NULL) {
-		fprintf(stderr, "FATAL: Cannot open " PATH_DATAFILES "asciivga!\n");
-		exit(1);
-	}
-	int ret = fread (&fontcga[0], 32768, 1, fontfile);
-	fclose (fontfile);
-	if (ret != 1) {
-		fprintf(stderr, "FATAL: Cannot read file " PATH_DATAFILES "asciivga!\n");
-		exit(1);
-	}
-#endif
 
 	palettecga[0] = rgb (0, 0, 0);
 	palettecga[1] = rgb (0, 0, 0xAA);
@@ -569,13 +559,13 @@ static void outVGA (uint16_t portnum, uint8_t value) {
 	switch (portnum) {
 			case 0x3B8: //hercules support
 				if ( ( (value & 2) == 2) && (vidmode != 127) ) {
-						oldah = regs.byteregs[regah];
-						oldal = regs.byteregs[regal];
-						regs.byteregs[regah] = 0;
-						regs.byteregs[regal] = 127;
+						oldah = CPU_AH;
+						oldal = CPU_AL;
+						CPU_AH = 0;
+						CPU_AL = 127;
 						vidinterrupt();
-						regs.byteregs[regah] = oldah;
-						regs.byteregs[regal] = oldal;
+						CPU_AH = oldah;
+						CPU_AL = oldal;
 					}
 				if (value & 0x80) videobase = 0xB8000;
 				else videobase = 0xB0000;

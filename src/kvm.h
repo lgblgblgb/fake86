@@ -77,5 +77,8 @@ static inline void     KVM_SET_SP ( uint16_t v ) { kvm.regs.rsp = (kvm.regs.rsp 
 static inline void     KVM_SET_IP ( uint16_t v ) { kvm.regs.rip = (kvm.regs.rip & ~0xFFFFUL) | v; }
 static inline void     KVM_SET_FL ( uint16_t v ) { kvm.regs.rflags = (kvm.regs.rflags & ~0xFFFFUL) | v; }
 
+extern void cpu_regs_to_kvm   ( void );
+extern void cpu_regs_from_kvm ( void );
+
 #endif
 #endif

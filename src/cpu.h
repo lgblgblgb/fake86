@@ -28,12 +28,6 @@
 extern uint64_t cached_access_count, uncached_access_count;
 #endif
 
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <time.h>
-#endif
-
 #define regax 0
 #define regcx 1
 #define regdx 2
@@ -72,7 +66,7 @@ union _bytewordregs_ {
 	uint8_t byteregs[8];
 };
 
-extern union _bytewordregs_ regs;
+//extern union _bytewordregs_ regs;
 
 #ifdef CPU_ADDR_MODE_CACHE
 struct addrmodecache_s {
@@ -88,69 +82,75 @@ struct addrmodecache_s {
 };
 #endif
 
-#if 0
-#define StepIP(x)	ip += (x)
-#define getmem8(x, y)	read86(segbase(x) + (y))
-#define getmem16(x, y)	readw86(segbase(x) + (y))
-#define putmem8(x, y, z)	write86(segbase(x) + (y), (z))
-#define putmem16(x, y, z)	writew86(segbase(x) + (y), (z))
-#define signext(value)	(int16_t)(int8_t)(value)
-#define signext32(value)	(int32_t)(int16_t)(value)
-#define getreg16(regid)	regs.wordregs[regid]
-#define getreg8(regid)	regs.byteregs[byteregtable[regid]]
-#define setreg16(regid, writeval)	regs.wordregs[regid] = writeval
-#define setreg8(regid, writeval)	regs.byteregs[byteregtable[regid]] = writeval
-#define getsegreg(regid)	segregs[regid]
-#define putsegreg(regid, writeval)	segregs[regid] = writeval
-#define segbase(x)	((uint32_t)(x) << 4)
-#endif
-
-#define getreg16(regid)			regs.wordregs[regid]
-#define getreg8(regid)			regs.byteregs[byteregtable[regid]]
-#define setreg16(regid, writeval)	regs.wordregs[regid] = (writeval)
-#define setreg8(regid, writeval)	regs.byteregs[byteregtable[regid]] = (writeval)
-
-#if 0
-#define makeflagsword() \
-	( \
-	2 | (uint16_t) cf | ((uint16_t) pf << 2) | ((uint16_t) af << 4) | ((uint16_t) zf << 6) | ((uint16_t) sf << 7) | \
-	((uint16_t) tf << 8) | ((uint16_t) ifl << 9) | ((uint16_t) df << 10) | ((uint16_t) of << 11) \
-	)
-
-#endif
-#if 0
-#define decodeflagsword(x) { \
-	temp16 = x; \
-	cf = temp16 & 1; \
-	pf = (temp16 >> 2) & 1; \
-	af = (temp16 >> 4) & 1; \
-	zf = (temp16 >> 6) & 1; \
-	sf = (temp16 >> 7) & 1; \
-	tf = (temp16 >> 8) & 1; \
-	ifl = (temp16 >> 9) & 1; \
-	df = (temp16 >> 10) & 1; \
-	of = (temp16 >> 11) & 1; \
-	}
-#endif
 
 #define RAM_SIZE 0x100000
 
 #ifdef USE_KVM
 extern uint8_t *RAM;
-extern void cpu_regs_to_kvm ( void );
-extern void cpu_regs_from_kvm ( void );
 #else
 extern uint8_t RAM[RAM_SIZE];
 #endif
 extern uint8_t readonly[RAM_SIZE];
-extern uint16_t segregs[4];
-extern uint8_t cf;
 extern uint8_t running;
 extern uint32_t makeupticks;
 extern uint64_t totalexec;
 
 extern uint16_t cpu_last_int_seg, cpu_last_int_ip;
 
+struct cpu {
+        uint8_t         cf, zf, pf, af, sf, tf, ifl, df, of;
+	uint16_t	savecs, saveip, ip, useseg;
+        int             hltstate;
+        uint16_t        segregs[4];
+	uint8_t		segoverride;
+        union           _bytewordregs_ regs;
+};
+
+extern struct cpu cpu;
+
+static inline uint16_t makeflagsword ( void )
+{
+	return 2 | (uint16_t) cpu.cf | ((uint16_t) cpu.pf << 2) | ((uint16_t) cpu.af << 4) | ((uint16_t) cpu.zf << 6) | ((uint16_t) cpu.sf << 7) |
+		((uint16_t) cpu.tf << 8) | ((uint16_t) cpu.ifl << 9) | ((uint16_t) cpu.df << 10) | ((uint16_t) cpu.of << 11)
+	;
+}
+
+static inline void decodeflagsword ( uint16_t x )
+{
+	cpu.cf  =  x        & 1;
+	cpu.pf  = (x >>  2) & 1;
+	cpu.af  = (x >>  4) & 1;
+	cpu.zf  = (x >>  6) & 1;
+	cpu.sf  = (x >>  7) & 1;
+	cpu.tf  = (x >>  8) & 1;
+	cpu.ifl = (x >>  9) & 1;
+	cpu.df  = (x >> 10) & 1;
+	cpu.of  = (x >> 11) & 1;
+}
+
+#define CPU_CS	cpu.segregs[regcs]
+#define CPU_DS	cpu.segregs[regds]
+#define CPU_ES	cpu.segregs[reges]
+#define CPU_SS	cpu.segregs[regss]
+
+#define CPU_AX  cpu.regs.wordregs[regax]
+#define CPU_BX  cpu.regs.wordregs[regbx]
+#define CPU_CX  cpu.regs.wordregs[regcx]
+#define CPU_DX  cpu.regs.wordregs[regdx]
+#define CPU_SI  cpu.regs.wordregs[regsi]
+#define CPU_DI  cpu.regs.wordregs[regdi]
+#define CPU_BP  cpu.regs.wordregs[regbp]
+#define CPU_SP  cpu.regs.wordregs[regsp]
+#define CPU_IP	cpu.ip
+
+#define CPU_AL  cpu.regs.byteregs[regal]
+#define CPU_BL  cpu.regs.byteregs[regbl]
+#define CPU_CL  cpu.regs.byteregs[regcl]
+#define CPU_DL  cpu.regs.byteregs[regdl]
+#define CPU_AH  cpu.regs.byteregs[regah]
+#define CPU_BH  cpu.regs.byteregs[regbh]
+#define CPU_CH  cpu.regs.byteregs[regch]
+#define CPU_DH  cpu.regs.byteregs[regdh]
 
 extern void write86 (uint32_t addr32, uint8_t value);
 extern void reset86(void);
@@ -158,5 +158,7 @@ extern void exec86 (uint32_t execloops);
 extern uint8_t read86 (uint32_t addr32);
 extern void cpu_push ( uint16_t pushval );
 extern uint16_t cpu_pop ( void );
+extern void cpu_IRET ( void );
+extern int cpu_hlt_handler ( void );
 
 #endif

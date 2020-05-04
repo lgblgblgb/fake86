@@ -87,7 +87,8 @@ uint8_t insertdisk ( uint8_t drivenum, char *filename )
 	}
 	if (cyls > 1023 || cyls * heads * sects * 512 != size) {
 		err = "Cannot find some CHS geometry for this disk image file!";
-		goto error;
+		//goto error;
+		// FIXME!!!!
 	}
 	// Seems to be OK. Let's validate (store params) and print message.
 	ejectdisk(drivenum);	// close previous disk image for this drive if there is any
@@ -144,22 +145,22 @@ static size_t chs2ofs ( int drivenum, int cyl, int head, int sect )
 static void bios_readdisk ( uint8_t drivenum, uint16_t dstseg, uint16_t dstoff, uint16_t cyl, uint16_t sect, uint16_t head, uint16_t sectcount, int is_verify )
 {
 	if (!disk[drivenum].inserted) {
-		regs.byteregs[regah] = 0x31;	// no media in drive
+		CPU_AH = 0x31;	// no media in drive
 		goto error;
 	}
 	if (!sect || sect > disk[drivenum].sects || cyl >= disk[drivenum].cyls || head >= disk[drivenum].heads) {
-		regs.byteregs[regah] = 0x04;	// sector not found
+		CPU_AH = 0x04;	// sector not found
 		goto error;
 	}
 	//uint32_t lba = ((uint32_t)cyl * (uint32_t)disk[drivenum].heads + (uint32_t)head) * (uint32_t)disk[drivenum].sects + (uint32_t)sect - 1;
 	//size_t fileoffset = lba * 512;
 	size_t fileoffset = chs2ofs(drivenum, cyl, head, sect);
 	if (fileoffset > disk[drivenum].filesize) {
-		regs.byteregs[regah] = 0x04;	// sector not found
+		CPU_AH = 0x04;	// sector not found
 		goto error;
 	}
 	if (hostfs_seek_set(disk[drivenum].diskfile, fileoffset) != fileoffset) {
-		regs.byteregs[regah] = 0x04;	// sector not found
+		CPU_AH = 0x04;	// sector not found
 		goto error;
 	}
 	uint32_t memdest = ((uint32_t)dstseg << 4) + (uint32_t)dstoff;
@@ -175,9 +176,9 @@ static void bios_readdisk ( uint8_t drivenum, uint16_t dstseg, uint16_t dstoff, 
 				// FIXME: segment overflow condition?
 				if (read86(memdest++) != sectorbuffer[sectoffset]) {
 					// sector verify failed!
-					regs.byteregs[regal] = cursect;
-					cf = 1;
-					regs.byteregs[regah] = 0xBB;	// error code?? what we should say in this case????
+					CPU_AL = cursect;
+					cpu.cf = 1;
+					CPU_AH = 0xBB;	// error code?? what we should say in this case????
 					return;
 				}
 			}
@@ -189,17 +190,17 @@ static void bios_readdisk ( uint8_t drivenum, uint16_t dstseg, uint16_t dstoff, 
 		}
 	}
 	if (sectcount && !cursect) {
-		regs.byteregs[regah] = 0x04;	// sector not found
+		CPU_AH = 0x04;	// sector not found
 		goto error;			// not even one sector could be read?
 	}
-	regs.byteregs[regal] = cursect;
-	cf = 0;
-	regs.byteregs[regah] = 0;
+	CPU_AL = cursect;
+	cpu.cf = 0;
+	CPU_AH = 0;
 	return;
 error:
 	// AH must be set with the error code
-	regs.byteregs[regal] = 0;
-	cf = 1;
+	CPU_AL = 0;
+	cpu.cf = 1;
 }
 
 
@@ -212,26 +213,26 @@ void bios_read_boot_sector ( int drive, uint16_t dstseg, uint16_t dstoff )
 static void bios_writedisk ( uint8_t drivenum, uint16_t dstseg, uint16_t dstoff, uint16_t cyl, uint16_t sect, uint16_t head, uint16_t sectcount )
 {
 	if (!disk[drivenum].inserted) {
-		regs.byteregs[regah] = 0x31;	// no media in drive
+		CPU_AH = 0x31;	// no media in drive
 		goto error;
 	}
 	if (!sect || sect > disk[drivenum].sects || cyl >= disk[drivenum].cyls || head >= disk[drivenum].heads) {
-		regs.byteregs[regah] = 0x04;	// sector not found
+		CPU_AH = 0x04;	// sector not found
 		goto error;
 	}
 	//uint32_t lba = ((uint32_t)cyl * (uint32_t)disk[drivenum].heads + (uint32_t)head) * (uint32_t)disk[drivenum].sects + (uint32_t)sect - 1;
 	//size_t fileoffset = lba * 512;
 	size_t fileoffset = chs2ofs(drivenum, cyl, head, sect);
 	if (fileoffset > disk[drivenum].filesize) {
-		regs.byteregs[regah] = 0x04;	// sector not found
+		CPU_AH = 0x04;	// sector not found
 		goto error;
 	}
 	if (disk[drivenum].readonly) {
-		regs.byteregs[regah] = 0x03;	// drive is read-only
+		CPU_AH = 0x03;	// drive is read-only
 		goto error;
 	}
 	if (hostfs_seek_set(disk[drivenum].diskfile, fileoffset) != fileoffset) {
-		regs.byteregs[regah] = 0x04;	// sector not found
+		CPU_AH = 0x04;	// sector not found
 		goto error;
 	}
 	uint32_t memdest = ((uint32_t)dstseg << 4) + (uint32_t)dstoff;
@@ -245,17 +246,17 @@ static void bios_writedisk ( uint8_t drivenum, uint16_t dstseg, uint16_t dstoff,
 			break;
 	}
 	if (sectcount && !cursect) {
-		regs.byteregs[regah] = 0x04;	// sector not found
+		CPU_AH = 0x04;	// sector not found
 		goto error;			// not even one sector could be written?
 	}
-	regs.byteregs[regal] = cursect;
-	cf = 0;
-	regs.byteregs[regah] = 0;
+	CPU_AL = cursect;
+	cpu.cf = 0;
+	CPU_AH = 0;
 	return;
 error:
 	// AH must be set with the error code
-	regs.byteregs[regal] = 0;
-	cf = 1;
+	CPU_AL = 0;
+	cpu.cf = 1;
 }
 
 
@@ -269,101 +270,101 @@ static void formattrack ( uint8_t drivenum, int track )
 void diskhandler ( void )
 {
 	static uint8_t lastdiskah[256], lastdiskcf[256];
-	//printf("DISK interrupt function %02Xh\n", regs.byteregs[regah]);
-	switch (regs.byteregs[regah]) {
+	//printf("DISK interrupt function %02Xh\n", CPU_AH);
+	switch (CPU_AH) {
 		case 0: //reset disk system
-			regs.byteregs[regah] = 0;
-			cf = 0; //useless function in an emulator. say success and return.
+			CPU_AH = 0;
+			cpu.cf = 0; //useless function in an emulator. say success and return.
 			break;
 		case 1: //return last status
-			regs.byteregs[regah] = lastdiskah[regs.byteregs[regdl]];
-			cf = lastdiskcf[regs.byteregs[regdl]];
+			CPU_AH = lastdiskah[CPU_DL];
+			cpu.cf = lastdiskcf[CPU_DL];
 			return;
 		case 2: //read sector(s) into memory
 			bios_readdisk(
-				regs.byteregs[regdl],						// drivenum
-				segregs[reges], getreg16(regbx),				// segment & offset
-				regs.byteregs[regch] + (regs.byteregs[regcl] / 64) * 256,	// cylinder
-				regs.byteregs[regcl] & 63,					// sector
-				regs.byteregs[regdh],						// head
-				regs.byteregs[regal],						// sectcount
-				0								// is verify (!=0) or read (==0) operation?
+				CPU_DL,				// drivenum
+				CPU_ES, CPU_BX,			// segment & offset
+				CPU_CH + (CPU_CL / 64) * 256,	// cylinder
+				CPU_CL & 63,			// sector
+				CPU_DH,				// head
+				CPU_AL,				// sectcount
+				0				// is verify (!=0) or read (==0) operation?
 			);
 			break;
 		case 3: //write sector(s) from memory
 			bios_writedisk(
-				regs.byteregs[regdl],						// drivenum
-				segregs[reges], getreg16(regbx),				// segment & offset
-				regs.byteregs[regch] + (regs.byteregs[regcl] / 64) * 256,	// cylinder
-				regs.byteregs[regcl] & 63,					// sector
-				regs.byteregs[regdh],						// head
-				regs.byteregs[regal]						// sectcount
+				CPU_DL,				// drivenum
+				CPU_ES, CPU_BX,			// segment & offset
+				CPU_CH + (CPU_CL / 64) * 256,	// cylinder
+				CPU_CL & 63,			// sector
+				CPU_DH,				// head
+				CPU_AL				// sectcount
 			);
 			break;
 		case 4:	// verify sectors ...
 			bios_readdisk(
-				regs.byteregs[regdl],						// drivenum
-				segregs[reges], getreg16(regbx),				// segment & offset
-				regs.byteregs[regch] + (regs.byteregs[regcl] / 64) * 256,	// cylinder
-				regs.byteregs[regcl] & 63,					// sector
-				regs.byteregs[regdh],						// head
-				regs.byteregs[regal],						// sectcount
+				CPU_DL,				// drivenum
+				CPU_ES, CPU_BX,			// segment & offset
+				CPU_CH + (CPU_CL / 64) * 256,	// cylinder
+				CPU_CL & 63,			// sector
+				CPU_DH,				// head
+				CPU_AL,				// sectcount
 				1								// is verify (!=0) or read (==0) operation?
 			);
 			break;
 		case 5: //format track
 			// pretend success ...
 			// TODO: at least fill area (ie, the whole track) with zeroes or something, pretending the formatting was happened :)
-			cf = 0;
-			regs.byteregs[regah] = 0;
+			cpu.cf = 0;
+			CPU_AH = 0;
 			break;
 		case 8: //get drive parameters
-			if (disk[regs.byteregs[regdl]].inserted) {
-				cf = 0;
-				regs.byteregs[regah] = 0;
-				regs.byteregs[regch] = disk[regs.byteregs[regdl]].cyls - 1;
-				regs.byteregs[regcl] = disk[regs.byteregs[regdl]].sects & 63;
-				regs.byteregs[regcl] = regs.byteregs[regcl] + (disk[regs.byteregs[regdl]].cyls/256) *64;
-				regs.byteregs[regdh] = disk[regs.byteregs[regdl]].heads - 1;
-				if (regs.byteregs[regdl]<0x80) {
-					regs.byteregs[regbl] = 4; //else regs.byteregs[regbl] = 0;
-					regs.byteregs[regdl] = 2;
+			if (disk[CPU_DL].inserted) {
+				cpu.cf = 0;
+				CPU_AH = 0;
+				CPU_CH = disk[CPU_DL].cyls - 1;
+				CPU_CL = disk[CPU_DL].sects & 63;
+				CPU_CL = CPU_CL + (disk[CPU_DL].cyls/256) *64;
+				CPU_DH = disk[CPU_DL].heads - 1;
+				if (CPU_DL<0x80) {
+					CPU_BL = 4; //else CPU_BL = 0;
+					CPU_DL = 2;
 				} else
-					regs.byteregs[regdl] = hdcount;
+					CPU_DL = hdcount;
 			} else {
-				cf = 1;
-				regs.byteregs[regah] = 0xAA;
+				cpu.cf = 1;
+				CPU_AH = 0xAA;
 			}
 			break;
 #if 0
 		case 0x15:	// get disk type
-			if (disk[regs.byteregs[regdl]].inserted) {
-				int drivenum = regs.byteregs[regdl];
+			if (disk[CPU_DL].inserted) {
+				int drivenum = CPU_DL;
 				printf("Requesting int 13h / function 15h for drive %02Xh\n", drivenum);
-				regs.byteregs[regah] = (drivenum & 0x80) ? 3 : 1;		// either "floppy without change line support" (1) or "harddisk" (3)
-				regs.byteregs[regcx] = (disk[drivenum].filesize >> 9) >> 16;	// number of blocks, high word
-				regs.byteregs[regdx] = (disk[drivenum].filesize >> 9) & 0xFFFF;	// number of blocks, low word
-				regs.byteregs[regal] = regs.byteregs[regah];
-				cf = 0;
+				CPU_AH = (drivenum & 0x80) ? 3 : 1;		// either "floppy without change line support" (1) or "harddisk" (3)
+				CPU_CX = (disk[drivenum].filesize >> 9) >> 16;	// number of blocks, high word
+				CPU_DX = (disk[drivenum].filesize >> 9) & 0xFFFF;	// number of blocks, low word
+				CPU_AL = CPU_AH;
+				cpu.cf = 0;
 			} else {
-				printf("Requesting int 13h / function 15h for drive %02Xh\n", regs.byteregs[regdl]);
-				/*regs.byteregs[regah] = 0;	// no such device
-				regs.byteregs[regal] = 0;
-				regs.wordregs[regcx] = 0;
-				regs.wordregs[regdx] = 0;*/
-				regs.wordregs[regax] = 0x0101;
-				cf = 1;
+				printf("Requesting int 13h / function 15h for drive %02Xh\n", CPU_DL);
+				/*CPU_AH = 0;	// no such device
+				CPU_AL = 0;
+				CPU_CX = 0;
+				CPU_DX = 0;*/
+				CPU_AX = 0x0101;
+				cpu.cf = 1;
 			}
 			break;
 #endif
 		default:
-			printf("BIOS: unknown Int 13h service was requested: %02Xh\n", regs.byteregs[regah]);
-			cf = 1;	// unknown function was requested?
-			regs.byteregs[regah] = 1;
+			printf("BIOS: unknown Int 13h service was requested: %02Xh\n", CPU_AH);
+			cpu.cf = 1;	// unknown function was requested?
+			CPU_AH = 1;
 			break;
 	}
-	lastdiskah[regs.byteregs[regdl]] = regs.byteregs[regah];
-	lastdiskcf[regs.byteregs[regdl]] = cf;
-	if (regs.byteregs[regdl] & 0x80)
-		RAM[0x474] = regs.byteregs[regah];
+	lastdiskah[CPU_DL] = CPU_AH;
+	lastdiskcf[CPU_DL] = cpu.cf;
+	if (CPU_DL & 0x80)
+		RAM[0x474] = CPU_AH;
 }

@@ -247,18 +247,41 @@ int kvm_run ( void )
 #endif
 }
 
+#include "cpu.h"
 
-
-	
-
-
-
-#if 0
-int main () {
-	kvm_init(MEMORY_SIZE);
-	setup_test();
-	kvm_run();
+void cpu_regs_from_kvm ( void )
+{
+	cpu.regs.wordregs[regax] = KVM_GET_AX();
+	cpu.regs.wordregs[regbx] = KVM_GET_BX();
+	cpu.regs.wordregs[regcx] = KVM_GET_CX();
+	cpu.regs.wordregs[regdx] = KVM_GET_DX();
+	cpu.regs.wordregs[regsi] = KVM_GET_SI();
+	cpu.regs.wordregs[regdi] = KVM_GET_DI();
+	cpu.regs.wordregs[regbp] = KVM_GET_BP();
+	cpu.regs.wordregs[regsp] = KVM_GET_SP();
+	cpu.ip = KVM_GET_IP();
+	decodeflagsword(KVM_GET_FL());
+	cpu.segregs[regcs] = KVM_GET_CS();
+	cpu.segregs[regds] = KVM_GET_DS();
+	cpu.segregs[reges] = KVM_GET_ES();
+	cpu.segregs[regss] = KVM_GET_SS();
 }
-#endif
+void cpu_regs_to_kvm ( void )
+{
+	KVM_SET_AX(cpu.regs.wordregs[regax]);
+	KVM_SET_BX(cpu.regs.wordregs[regbx]);
+	KVM_SET_CX(cpu.regs.wordregs[regcx]);
+	KVM_SET_DX(cpu.regs.wordregs[regdx]);
+	KVM_SET_SI(cpu.regs.wordregs[regsi]);
+	KVM_SET_DI(cpu.regs.wordregs[regdi]);
+	KVM_SET_BP(cpu.regs.wordregs[regbp]);
+	KVM_SET_SP(cpu.regs.wordregs[regsp]);
+	KVM_SET_IP(cpu.ip);
+	KVM_SET_FL(makeflagsword());
+	KVM_SET_CS(cpu.segregs[regcs]);
+	KVM_SET_DS(cpu.segregs[regds]);
+	KVM_SET_ES(cpu.segregs[reges]);
+	KVM_SET_SS(cpu.segregs[regss]);
+}
 
 #endif

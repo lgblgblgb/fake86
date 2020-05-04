@@ -31,7 +31,7 @@
 #include "i8259.h"
 
 
-static struct sermouse_s sermouse;
+struct sermouse_s sermouse;
 
 
 static void bufsermousedata ( uint8_t value )
@@ -67,7 +67,8 @@ static void outsermouse ( uint16_t portnum, uint8_t value )
 }
 
 
-static uint8_t insermouse ( uint16_t portnum ) {
+static uint8_t insermouse ( uint16_t portnum )
+{
 	uint8_t temp;
 	//printf("[DEBUG] Serial mouse, port %X in\n", portnum);
 	portnum &= 7;
@@ -97,6 +98,7 @@ static uint8_t insermouse ( uint16_t portnum ) {
 void initsermouse ( uint16_t baseport, uint8_t irq )
 {
 	sermouse.bufptr = 0;
+	sermouse.baseport = baseport;
 	set_port_write_redirector(baseport, baseport + 7, &outsermouse);
 	set_port_read_redirector(baseport, baseport + 7, &insermouse);
 }

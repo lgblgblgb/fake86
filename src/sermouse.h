@@ -24,10 +24,13 @@
 #include <stdint.h>
 
 struct sermouse_s {
-	uint8_t reg[8];
-	uint8_t buf[16];
-	int8_t bufptr;
+	uint8_t	reg[8];
+	uint8_t	buf[16];
+	int8_t	bufptr;
+	int	baseport;
 };
+
+extern struct sermouse_s sermouse;
 
 extern void sermouseevent ( uint8_t buttons, int8_t xrel, int8_t yrel );
 extern void initsermouse  ( uint16_t baseport, uint8_t irq );

@@ -22,9 +22,7 @@
    load ROM binaries, and kickstart the CPU emulator. */
 
 #include "config.h"
-//#ifdef __APPLE__      /* Memory leaks occur in OS X when the SDL window gets */
-#include <SDL.h>      /* resized if SDL.h not included in file with main() */
-//#endif
+#include <SDL.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,6 +31,7 @@
 #include "mutex.h"
 #ifdef _WIN32
 	//extern CRITICAL_SECTION screenmutex;
+#	include "windows.h"
 #	include "win32/menus.h"
 #else
 #	include <unistd.h>
@@ -129,7 +128,7 @@ static int inithardware( void )
 	initBlaster(0x220, 7);
 	puts("OK");
 	printf("  - Serial mouse (Microsoft compatible): ");
-	initsermouse (0x3F8, 4);
+	initsermouse(0x3F8, 4);
 	puts("OK");
 	if (doaudio)
 		initaudio();
@@ -145,6 +144,7 @@ static int inithardware( void )
 
 static int EmuThread(void *ptr)
 {
+	puts("CPU: starting to execute.");
 #ifdef USE_KVM
 	if (usekvm)
 		while (running) {

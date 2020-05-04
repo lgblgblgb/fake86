@@ -30,6 +30,7 @@
 #include "cpu.h"
 #include "speaker.h"
 
+//#define DEBUG_PORT_TRAFFIC
 
 uint8_t portram[0x10000];
 
@@ -54,14 +55,21 @@ static uint8_t unknown_port_reader (uint16_t portnum)
 
 static void sliced_port16_writer ( uint16_t portnum, uint16_t value )
 {
+#ifdef DEBUG_PORT_TRAFFIC
+	printf("IO: writing WORD port %Xh with data %04Xh\n", portnum, value);
+#endif
 	portout(portnum, (uint8_t)value);
 	portout(portnum + 1, (uint8_t)(value >> 8));
 }
 
 static uint16_t sliced_port16_reader ( uint16_t portnum )
 {
-	uint16_t ret = ret = (uint16_t)portin(portnum);
-	return ret | ((uint16_t)portin(portnum + 1) << 8);
+	uint16_t ret = (uint16_t)portin(portnum);
+	ret |= ((uint16_t)portin(portnum + 1) << 8);
+#ifdef DEBUG_PORT_TRAFFIC
+	printf("IO: reading WORD port %Xh with result of data %04Xh\n", portnum, ret);
+#endif
+	return ret;
 }
 
 
@@ -78,6 +86,9 @@ void ports_init ( void )
 
 void portout (uint16_t portnum, uint8_t value)
 {
+#ifdef DEBUG_PORT_TRAFFIC
+	printf("IO: writing BYTE port %Xh with data %02Xh\n", portnum, value);
+#endif
 	portram[portnum] = value;
 	//if (verbose) printf("portout(0x%X, 0x%02X);\n", portnum, value);
 	switch (portnum) {
@@ -94,6 +105,9 @@ void portout (uint16_t portnum, uint8_t value)
 
 uint8_t portin (uint16_t portnum)
 {
+#ifdef DEBUG_PORT_TRAFFIC
+	printf("IO: reading BYTE port %Xh\n", portnum);
+#endif
 	//if (verbose) printf("portin(0x%X);\n", portnum);
 	switch (portnum) {
 		case 0x62:
