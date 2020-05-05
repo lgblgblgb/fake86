@@ -21,7 +21,7 @@
 #ifndef FAKE86_FAKE86_RELEASE_H_INCLUDED
 #define FAKE86_FAKE86_RELEASE_H_INCLUDED
 
-#define FAKE86_RELEASE_STRING	"Fake86 v0.20.4.26"
+#define FAKE86_RELEASE_STRING	"Fake86 v0.20.5.4"
 
 #define FAKE86_BANNER_STRING	FAKE86_RELEASE_STRING " (C)2010-2013 Mike Chambers, (C)2020 Gabor Lenart \"LGB\"\n[A portable, open-source 8086 PC emulator]\n"
 

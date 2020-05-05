@@ -148,6 +148,10 @@ void write86(uint32_t addr32, uint8_t value) {
 
 		updatedscreen = 1;
 	} else {
+#ifdef DEBUG_BIOS_DATA_AREA_CPU_ACCESS
+		if ((addr32 & 0xFFF00) == 0x400)
+			printf("DEBUG: CPU accesses (WRITE) BDA at %Xh, value it writes: %Xh\n", addr32, value);
+#endif
 		RAM[tempaddr32] = value;
 	}
 }
@@ -170,6 +174,10 @@ uint8_t read86(uint32_t addr32) {
 		else
 			return readVGA(addr32 - 0xA0000);
 	}
+#ifdef DEBUG_BIOS_DATA_AREA_CPU_ACCESS
+	if ((addr32 & 0xFFF00) == 0x400)
+		printf("DEBUG: CPU accesses (READ) BDA at %Xh, value there: %Xh\n", addr32, RAM[addr32]);
+#endif
 	if (!didbootstrap) {
 		RAM[0x410] = 0x41; // ugly hack to make BIOS always believe we
 				   // have an EGA/VGA card installed
@@ -1455,8 +1463,10 @@ void exec86(uint32_t execloops) {
 						  i8259, if any */
 		}
 
-		if (cpu.hltstate)
+		if (cpu.hltstate) {
+			puts("CPU: HALTED!!!!!");
 			goto skipexecution;
+		}
 
 		/*if ((((uint32_t)cpu.segregs[regcs] << 4) + (uint32_t)cpu.ip) ==
 		   0xFEC59) {
@@ -3404,10 +3414,7 @@ void exec86(uint32_t execloops) {
 			break;
 
 		case 0xCC: /* CC INT 3 */
-			if (cpu.segregs[regcs] == internalbiostrapseg && cpu.saveip < 0x400)
-				bios_internal_trap(cpu.saveip);
-			else
-				intcall86(3);
+			intcall86(3);
 			break;
 
 		case 0xCD: /* CD INT Ib */
@@ -3624,10 +3631,6 @@ void exec86(uint32_t execloops) {
 			// HLT can be used as trap. We call this implementation to tell, if it's really a halt or just a trap
 			if (cpu_hlt_handler())
 				cpu.hltstate = 1;
-			//if (cpu.segregs[regcs] == internalbiostrapseg && cpu.saveip < 0x400) {
-			//	bios_internal_trap(cpu.saveip);
-			//} else
-			//	cpu.hltstate = 1;
 			break;
 
 		case 0xF5: /* F5 CMC */

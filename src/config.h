@@ -47,6 +47,9 @@
 //#define DO_NOT_FORCE_INLINE
 //#define DO_NOT_FORCE_UNREACHABLE
 
+#define DEBUG_BIOS_DATA_AREA_CPU_ACCESS
+
+
 //be sure to only define ONE of the CPU_* options at any given time, or
 //you will likely get some unexpected/bad results!
 

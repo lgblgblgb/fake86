@@ -159,16 +159,30 @@ int kvm_init ( size_t mem_size )
 		perror("KVM: mmap kvm_run");
 		goto error;
 	}
+	// How does this work?! I always get Invalid argument ...
+#if 0
+	struct kvm_enable_cap caps;
+	memset(&caps, 0, sizeof(caps));
+	caps.cap = KVM_CAP_SYNC_MMU;
+	if (ioctl(kvm.vcpu_fd, KVM_ENABLE_CAP, &caps) < 0) {
+		perror("KVM: KVM_ENABLE_CAP");
+		goto error;
+	}
+#endif
 	if (get_regs())
 		return -1;
 	kvm.sregs.cs.selector = 0;
 	kvm.sregs.ds.selector = 0;
 	kvm.sregs.es.selector = 0;
 	kvm.sregs.ss.selector = 0;
+	kvm.sregs.fs.selector = 0;
+	kvm.sregs.gs.selector = 0;
 	kvm.sregs.cs.base = 0;
 	kvm.sregs.ds.base = 0;
 	kvm.sregs.es.base = 0;
 	kvm.sregs.ss.base = 0;
+	kvm.sregs.fs.base = 0;
+	kvm.sregs.gs.base = 0;
 	memset(&kvm.regs, 0, sizeof(kvm.regs));
 	if (set_regs())
 		return -1;
@@ -185,14 +199,14 @@ int kvm_run ( void )
 {
 	if (set_regs())
 		return -1;
-	printf("KVM: entering @ %Xh:%Xh\n", (unsigned int)kvm.sregs.cs.selector, (unsigned int)kvm.regs.rip);
+	printf("KVM: entering RUN @ %Xh:%Xh\n", (unsigned int)kvm.sregs.cs.selector, (unsigned int)kvm.regs.rip);
 	if (ioctl(kvm.vcpu_fd, KVM_RUN, 0) < 0) {
 		perror("KVM: virtual machine cannot be run");
 		return -1;
 	}
 	if (get_regs())
 		return -1;
-	printf("KVM: VM exited with code %d at %Xh:%Xh\n", kvm.kvm_run->exit_reason, (unsigned int)kvm.sregs.cs.selector, (unsigned int)kvm.regs.rip);
+	printf("KVM: leaving RUN (exited with code %d) @ %Xh:%Xh\n", kvm.kvm_run->exit_reason, (unsigned int)kvm.sregs.cs.selector, (unsigned int)kvm.regs.rip);
 	return 0;
 #if 0
 

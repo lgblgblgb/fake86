@@ -174,6 +174,17 @@ static int EmuThread(void *ptr)
 					}
 					exec86(1);	// execute a single opcode with the software emulator, hopefully the I/O one, which was the reason KVM exited from VM run mode.
 					continue;
+				case KVM_EXIT_HLT:
+					// cpu_hlt_handler() is designed for the software x86 emulation
+					// it expects the saveip (!) of the HLT, but it seems we passed it already with KVM, let's decrement IP ;)
+					// And also populate it as 'saveip' what bios.c uses by cpu_hlt_handler()
+					cpu.ip--;
+					cpu.saveip = cpu.ip;
+					if (cpu_hlt_handler() == 0) {	// Fake86 bios internal trap! :)
+						continue;
+					}
+					puts("KVM: HLT condition?!");
+					break;
 			}
 			printf("KVM is not ready yet :(\n");
 			running = 0;

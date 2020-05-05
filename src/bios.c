@@ -29,6 +29,8 @@
 #include "disk.h"
 #include "sermouse.h"
 #include "ports.h"
+// FIXME we don't need this:
+#include "video.h"
 
 
 #define BIOS_TRAP_RESET	0x100
@@ -37,9 +39,9 @@
 
 
 int internalbios = 0;
-int internalbiostrapseg = 0xFFFFFF;	// some impossible segment value by default!
+int internalbiostrapseg = 0xFFFFFF;	// some impossible segment value by default, so when this mode is not used, it won't be recoginized!
 
-static uint16_t return_segment, return_offset, return_flags;
+#define TRAPSEG_FOR_BIOS 0xF000
 
 #if defined(CPU_8086)
 #	define CPU_TYPE_STR "8086"
@@ -88,10 +90,8 @@ static void bios_putstr ( const char *s )
 
 static void place_trap_vector ( int addr, int trap )
 {
-	RAM[addr + 0] = (trap * 2) & 0xFF;
-	RAM[addr + 1] = (trap * 2) >> 8;
-	RAM[addr + 2] = internalbiostrapseg & 0xFF;
-	RAM[addr + 3] = internalbiostrapseg >> 8;
+	pokew(addr, trap);			// offset
+	pokew(addr + 2, internalbiostrapseg);	// segment
 }
 
 
@@ -106,12 +106,12 @@ static void place_jmp_to_trap_vector ( int addr, int trap )
 void bios_internal_install ( void )
 {
 	internalbios = 1;	// make sure to switch it on
-	internalbiostrapseg = 0xF000;
+	internalbiostrapseg = TRAPSEG_FOR_BIOS;
 	// Build our trap table
 	for (int a = 0; a < 0x200; a++) {
-		RAM[internalbiostrapseg * 16 + a * 2 + 0] = 0xCC;	// INT3 opcode
-		RAM[internalbiostrapseg * 16 + a * 2 + 1] = 0xCF;	// IRET opcode
+		RAM[internalbiostrapseg * 16 + a] = 0xF4;	// opcode of HLT
 	}
+	RAM[internalbiostrapseg * 16 + 0x1FF] = 0xCF;		// an IRET to be used for various purposes (@ trapseg:0x1FF)
 	// Entry points
 	place_jmp_to_trap_vector(0xFFFF0, BIOS_TRAP_RESET);	// CPU reset address will trap to our BIOS init routine
 	place_jmp_to_trap_vector(0xF6000, BIOS_TRAP_BASIC);	// Common entry point for ROM BASIc.
@@ -126,6 +126,8 @@ void bios_internal_install ( void )
 	printf("BIOS: installed, trap_segment = %04Xh\n", internalbiostrapseg);
 }
 
+
+static int do_not_IRET;
 
 
 // INT 19h
@@ -144,16 +146,15 @@ static void bios_boot_interrupt ( void )
 	}
 	bios_putstr("OK.\n\n");
 	// Initialize environment needed for the read OS boot loader.
-	CPU_SP = 0x400;	// set some value to SP, this seems to be common in BIOSes
-	// Do not fill CS here, since the trap returns for IRET ... Just the other segment registers
+	CPU_SP = 0x400;		// set some value to SP, this seems to be common in BIOSes
+	CPU_CS = 0;
+	CPU_IP = 0x7C00;	// 0000:7C000 where we loaded boot record and what BIOSes do in general
 	CPU_SS = 0;
 	CPU_DS = 0;
 	CPU_ES = 0;
 	CPU_DX = bootdrive;	// DL only, but some BIOSes passes DH=0 too ...
-	// Set execution parameters after returning
-	return_segment = 0;
-	return_offset = 0x7C00;
-	return_flags = 0;
+	decodeflagsword(0);	// clear all flags just to be safe
+	do_not_IRET = 1;
 }
 
 static int color = 7;
@@ -241,18 +242,18 @@ static void bios_reset ( void )
 			);
 		}
 	}
-	memset(RAM, 0, 0x1000);	// clear some part of the main RAM to be sure
+	memset(RAM, 0, 0x500);	// clear some part of the main RAM to be sure
 	// Install fake interrupt table
 	for (int a = 0; a < 0x100; a++)
 		place_trap_vector(a * 4, a);
 	// Override some of the vector table though
-	pokew(0x1C * 4, 1);	pokew(0x1C * 4 + 2, internalbiostrapseg );	// this must point to IRET, since our trap-table has IRET, we can exploit that.
+	pokew(0x1C * 4, 0x1FF);			// override, this interrupt points to an IRET
 	// Configuration word. This word is returned by INT 11h
 	pokew(0x410,
 		((fdcount ? 1 : 0) << 0) +	// bit 0: "1" if one of more floppy drives is in the system
 		((0) << 1) +			// bit 1: XT not used, AT -> 1 if there is FPU
 		((3) << 2) +			// bit 2-3: XT = memory on motherboard (max 64K), AT = not used
-		((2) << 4) +			// bit 4-5: video mode on startup: 0=not used, 1=40*25 colour, 2=80*25 colour, 3=80*25 mono
+		((0) << 4) +			// bit 4-5: video mode on startup: 0=VGA/EGA, 1=40*25 colour, 2=80*25 colour, 3=80*25 mono
 		((fdcount?fdcount-1:0) << 6) +	// bit 6-7: floppy drives in system (!! 0 means ONE, etc)
 		((0) << 8) +			// bit 8: XT = zero if there is DMA, AT = not used
 		((1) << 9) +			// bit 9-11: number of RS232 ports
@@ -264,6 +265,8 @@ static void bios_reset ( void )
 	pokew(0x400, sermouse.baseport); // COM1 (first COM port) base I/O address
 	pokew(0x413, 640);		// base memory (below 640K!), returned by int12h. ... 640Kbyte ~ "should be enough for everyone" - remember?
 	pokeb(0x475, hdcount);		// number of HDDs in the system
+	pokew(0x44A, 80);		// Number of textcolumns per row for the active video mode
+	pokeb(0x484, 24);		// Number of video rows - 1
 	// FIXME: we must configure the interrupt controller to generate the priodic IRQs. Then we must write the IRQ handler (also does keyboard queue fill based on kbd ports)
 	static const struct { uint16_t port; uint8_t data; } bios_port_init_seq[] = {
 		{ 0xA0, 0x00 },		//{IO: unknown port OUT to 00A0h with value 00h
@@ -396,25 +399,44 @@ static void bios_putchar ( const char c )
 		y++;
 	} else if (c == '\r') {
 		x = 0;
+	} else if (c == 8 && x > 0) {
+		x--;
+		RAM[0xB8000 + (y * 160) + x * 2] = 32;
 	}
 	if (y == 25) {
 		y = 24;
 		memmove(RAM + 0xB8000, RAM + 0xB8000 + 160, 80 * 25 * 2);
-		memset(RAM + 0xB8000 + 24 * 160, 32, 160);
+		for (int a = 0; a < 80; a++) {
+			RAM[0xB8000 + 24 * 160 + a * 2 + 0] = 32;
+			RAM[0xB8000 + 24 * 160 + a * 2 + 1] = color;
+		}
 	}
+	cursx = x;
+	cursy = y;
 }
 
 
 // This is the IRQ handler for the periodic interrupt of BIOS
 static void bios_irq0_handler ( void )
 {
-	puts("BIOS: IRQ0!");
+	uint32_t cnt = (peekw(0x46C) + (peekw(0x46E) << 16)) + 1;
+	pokew(0x46C, cnt & 0xFFFF);
+	pokew(0x46E, cnt >> 16);
+	//puts("BIOS: IRQ0!");
 	portout(0x20, 0x20);	// send end-of-interrupt command to the interrupt controller
 }
 
 
-static int kbd_ascii_code = -1, kbd_scan_code = -1;
+static int kbd_scan = -1;
+static int kbd_mod = 0;
 
+static void _chg_kbd_mod ( int mask, int scan )
+{
+	if ((scan & 0x80))
+		kbd_mod &= ~mask;
+	else
+		kbd_mod |= mask;
+}
 
 // This is the IRQ handler for the keyboard interrupt of BIOS
 static void bios_irq1_handler ( void )
@@ -425,42 +447,89 @@ static void bios_irq1_handler ( void )
 		uint8_t scan = portram[0x60];	// read the scancode
 		portram[0x64] &= ~2;		// empty the buffer
 		printf("BIOS: scan got: %Xh\n", scan);
-		if (scan < 0x80) {
-			kbd_ascii_code = scan;
-			kbd_scan_code = scan;
+		switch (scan & 0x7F) {
+			case 0x36:	// rshift
+				_chg_kbd_mod(1, scan);
+			case 0x2A:
+				_chg_kbd_mod(2, scan);
+			default:
+				if (scan < 0x80)
+					kbd_scan = scan;
+				break;
 		}
 	}
 	portout(0x20, 0x20);	// send end-of-interrupt command to the interrupt controller
 }
 
 
+static const uint8_t scan2ascii[] = {
+	//0    1     2      3     4     5     6     7     8    9     A      B     C    D     E     F
+	0x00, 0x1B, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x30, 0x2D, 0x3D, 0x08, 0x09, 
+	0x71, 0x77, 0x65, 0x72, 0x74, 0x79, 0x75, 0x69, 0x6F, 0x70, 0x5B, 0x5D, 0x0D, 0x00, 0x61, 0x73, 
+	0x64, 0x66, 0x67, 0x68, 0x6A, 0x6B, 0x6C, 0x3B, 0x27, 0x60, 0x00, 0x5C, 0x7A, 0x78, 0x63, 0x76, 
+	0x62, 0x6E, 0x6D, 0x2C, 0x2E, 0x2F, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+	0x00, 0x00, 0x00, 0x7F, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x2A, 0x00, 0x00, 0x00, 
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+	0x04, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 
+	0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x00, 
+
+
+	0x00, 0x37, 0x2E, 0x20, 0x2F, 0x30, 0x31, 0x21, 0x32, 0x33, 0x34, 0x35, 0x22, 0x36, 0x38, 0x3E,
+	0x11, 0x17, 0x05, 0x12,	0x14, 0x19, 0x15, 0x09,	0x0F, 0x10, 0x39, 0x3A,	0x3B, 0x84, 0x61, 0x13,
+	0x04, 0x06, 0x07, 0x08,	0x0A, 0x0B, 0x0C, 0x3F,	0x40, 0x41, 0x82, 0x3C,	0x1A, 0x18, 0x03, 0x16,
+	0x02, 0x0E, 0x0D, 0x42,	0x43, 0x44, 0x81, 0x3D,	0x88, 0x2D, 0xC0, 0x23,	0x24, 0x25, 0x26, 0x27,
+	0x28, 0x29, 0x2A, 0x2B,	0x2C, 0xA0, 0x90
+#if 0
+	0x00, 0x37, 0x2E, 0x20, 0x2F, 0x30, 0x31, 0x21, 0x32, 0x33, 0x34, 0x35, 0x22, 0x36, 0x38, 0x3E,
+	0x11, 0x17, 0x05, 0x12,	0x14, 0x19, 0x15, 0x09,	0x0F, 0x10, 0x39, 0x3A,	0x3B, 0x84, 0x01, 0x13,
+	0x04, 0x06, 0x07, 0x08,	0x0A, 0x0B, 0x0C, 0x3F,	0x40, 0x41, 0x82, 0x3C,	0x1A, 0x18, 0x03, 0x16,
+	0x02, 0x0E, 0x0D, 0x42,	0x43, 0x44, 0x81, 0x3D,	0x88, 0x2D, 0xC0, 0x23,	0x24, 0x25, 0x26, 0x27,
+	0x28, 0x29, 0x2A, 0x2B,	0x2C, 0xA0, 0x90
+#endif
+};
+
+
 static int bios_getkey ( int remove_key )
 {
-	if (kbd_scan_code == -1)
+	if (kbd_scan == -1)
 		return 0;
 	else {
-		int scan = kbd_scan_code;
-		int ascii = kbd_ascii_code;
+		int scan = kbd_scan;
 		if (remove_key) {
-			kbd_scan_code = -1;
-			kbd_ascii_code = -1;
+			kbd_scan = -1;
 		}
-		return ascii | (scan << 8);
+		if (scan < sizeof(scan2ascii)) {
+			int ascii = scan2ascii[scan];
+			if ((kbd_mod & 3)) {
+				if (ascii == ';')
+					ascii = ':';
+			}
+			return ascii | (scan << 8);
+		} else
+			return (scan << 8);
 	}
 }
 
 
 
-void bios_internal_trap ( unsigned int trap )
+static void bios_internal_trap ( unsigned int trap )
 {
-	if ((trap & 1) || trap > 0x3FE) {
-		fprintf(stderr, "BIOS: invalid trap offset, your system may crash! (%04Xh)\n", trap);
-		return;
-	}
-	trap >>= 1;
-	return_offset = cpu_pop();
-	return_segment = cpu_pop();
-	return_flags = cpu_pop();
+	int do_override_some_flags = 1;
+	uint16_t stack_ip = peekw(CPU_SS * 16 + CPU_SP);
+	uint16_t stack_cs = peekw(CPU_SS * 16 + ((CPU_SP + 2) & 0xFFFF));
+	do_not_IRET = 0;
 	if (trap < 0x100)
 		cpu.cf = 0;	// by default we set carry flag to zero. INT handlers may set it '1' in case of error!
 	//printf("BIOS_TRAP: %04Xh STACK_RET=%04X:%04X AX=%04Xh\n", trap, return_segment, return_offset, CPU_AX);
@@ -471,11 +540,11 @@ void bios_internal_trap ( unsigned int trap )
 			break;
 		case 0x08:
 			bios_irq0_handler();
-			goto without_bothering_flags;
+			do_override_some_flags = 0;
 			break;
 		case 0x09:
 			bios_irq1_handler();
-			goto without_bothering_flags;
+			do_override_some_flags = 0;
 			break;
 		case 0x10:		// Interrupt 10h: video services
 			switch (CPU_AH) {
@@ -483,9 +552,10 @@ void bios_internal_trap ( unsigned int trap )
 					bios_putchar(CPU_AL);
 					break;
 				default:
-					printf("BIOS: unknown 1Ah interrupt function %02Xh\n", CPU_AH);
-					cpu.cf = 1;
-					CPU_AH = 1;
+					vidinterrupt();
+					//printf("BIOS: unknown 10h interrupt function %02Xh\n", CPU_AH);
+					//cpu.cf = 1;
+					//CPU_AH = 1;
 					break;
 			}
 			break;
@@ -519,24 +589,37 @@ void bios_internal_trap ( unsigned int trap )
 					break;
 			}
 			break;
+		case 0x15:
+			cpu.cf = 1;
+			CPU_AH = 0x80;
+			printf("BIOS: unknown 15h AT ALL interrupt function, AX=%04Xh\n", CPU_AX);
+			break;
 		case 0x16:		// Interrupt 16h: keyboard functions TODO+FIXME !
 			switch (CPU_AH) {
 				case 0:	// get keypress, with waiting.
 					// output: AL=0 -> extended code got, AH=the extended code
 					//         AL!=0 -> AL=ASCII code, AH=scancode
 					CPU_AX = bios_getkey(1);
-					if (!CPU_AX)
-						return_offset--;	// re-execute the trap, if there was no key!
+					if (!CPU_AX) {
+						// FIXME: fake!!!!
+						//CPU_AL='A';
+						//CPU_AH='A';
+						//break;
+						// if no key, re-execute the trap!
+						CPU_CS = internalbiostrapseg;
+						CPU_IP = 0x16;
+						do_not_IRET = 1;
+						puts("Waiting for keypress!");
+					}
 					break;
 				case 1:	// check kbd buffer (without waiting!)
 					// output: ZF=1: no char
 					// 	   ZF=0: there is char (AL/AH like with function 0)
 					CPU_AX = bios_getkey(0);
 					if (CPU_AX)
-						return_flags &= ~(1 << 6);
+						cpu.zf = 0;
 					else
-						return_flags |= (1 << 6);
-					goto without_bothering_flags;
+						cpu.zf = 1;
 					break;
 				case 2:	// get kbd status TODO
 					CPU_AL = 0;
@@ -551,7 +634,37 @@ void bios_internal_trap ( unsigned int trap )
 		case 0x1A:		// Interrupt 1Ah: time services
 			switch (CPU_AH) {
 				case 0x00:	// get 18.2 ticks/sec since midnight and day change flag
-					int_1a_gettime();
+					CPU_DX = peekw(0x46C);
+					CPU_CX = peekw(0x46E);
+					CPU_AL = peekb(0x470);
+					break;
+				case 0x01:
+					pokew(0x46C, CPU_DX);
+					pokew(0x46E, CPU_CX);
+					break;
+				case 0x02:	// read real-time clock
+					{
+					time_t uts = time(NULL);
+					struct tm *t = localtime(&uts);
+					CPU_DH = t->tm_sec;
+					CPU_CL = t->tm_min;
+					CPU_CH = t->tm_hour;
+					CPU_DL  = t->tm_isdst > 0;
+					printf("BIOS: RTC time requested, answer: %02u:%02u:%02u DST=%u\n", CPU_CH, CPU_CL, CPU_DH, CPU_DL);
+					}
+					cpu.cf = 0;
+					break;
+				case 0x04:	// read real-time clock's date
+					{
+					time_t uts = time(NULL);
+					struct tm *t = localtime(&uts);
+					CPU_DL = t->tm_mday;
+					CPU_DH = t->tm_mon + 1;
+					CPU_CL = t->tm_year % 100;
+					CPU_CH = t->tm_year / 100 + 19;
+					printf("BIOS: RTC date requested, answer: %02u%02u.%02u.%02u\n", CPU_CH, CPU_CL, CPU_DH, CPU_DL);
+					}
+					cpu.cf = 0;
 					break;
 				default:
 					printf("BIOS: unknown 1Ah interrupt function %02Xh\n", CPU_AH);
@@ -572,37 +685,50 @@ void bios_internal_trap ( unsigned int trap )
 		case 0x18:		// ROM BASIC interrupt :)
 		case BIOS_TRAP_BASIC:	// the entry point of ROM basic.
 			bios_putstr("No ROM-BASIC. System halted.\n");
-			return_offset -= 1;
+			do_not_IRET = 1;
+			CPU_CS = internalbiostrapseg;
+			CPU_IP = BIOS_TRAP_HALT;
 			break;
 		case BIOS_TRAP_HALT:
-			return_offset -= 1;
+			do_not_IRET = 1;
+			CPU_CS = internalbiostrapseg;
+			CPU_IP = BIOS_TRAP_HALT;
 			break;
 		default:
 			if (trap < 0x100) {
-				printf("BIOS: unhandled interrupt %02Xh (AX=%04Xh) at %04X:%04X\n", trap, CPU_AX, return_segment, return_offset);
+				printf("BIOS: unhandled interrupt %02Xh (AX=%04Xh) at %04X:%04X\n", trap, CPU_AX, stack_cs, stack_ip);
 				cpu.cf = 1;
 				CPU_AH = 1;	// error code?
 			} else {
-				fprintf(stderr, "BIOS: FATAL: invalid trap number %04Xh (stack frame: %04X:%04X)\n", trap, return_segment, return_offset);
+				fprintf(stderr, "BIOS: FATAL: invalid trap number %04Xh (stack frame: %04X:%04X)\n", trap, stack_cs, stack_ip);
 				exit(1);
 			}
 			break;
 	}
-	// the next opcode after the "TRAP"-ing 0xCC will be IRET.
-	// That's why we pop'ed at the beginning and pushing back now.
-	// So every functions between at C level can modify return parameters this way.
-	return_flags = (return_flags & 0xFFFE) | cpu.cf;  // modified CF, so after IRET, modification of "cf" in our fake-BIOS is preserved!
-without_bothering_flags:
-	cpu_push(return_flags);
-	cpu_push(return_segment);
-	cpu_push(return_offset);
+	if (!do_not_IRET) {
+		int zf_to_set = cpu.zf;
+		int cf_to_set = cpu.cf;
+		// Simulate an IRET by our own
+		CPU_IP = cpu_pop();
+		CPU_CS = cpu_pop();
+		decodeflagsword(cpu_pop());
+		// Override some flags, if needed
+		if (do_override_some_flags) {
+			cpu.zf = zf_to_set;
+			cpu.cf = cf_to_set;
+		}
+	} else {
+		printf("BIOS: returning from trap without IRET (trap=%Xh)!\n", trap);
+	}
 }
 
 
 int cpu_hlt_handler ( void )
 {
-	if (CPU_CS != internalbiostrapseg || cpu.saveip >= 0x400)
+	if (CPU_CS != internalbiostrapseg || cpu.saveip >= 0x1FF) {
+		puts("BIOS: critical warning, HLT outside of trap area?!");
 		return 1;	// Yes, it was really a halt, since it does not fit into our trap area
+	}
 	bios_internal_trap(cpu.saveip);
 	return 0;	// no, it wasn't a HLT, it's our trap!
 }
