@@ -18,15 +18,35 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef FAKE86_INPUT_H_INCLUDED
-#define FAKE86_INPUT_H_INCLUDED
+#ifndef FAKE86_OSD_H_INCLUDED
+#define FAKE86_OSD_H_INCLUDED
 
-extern uint8_t keyboardwaitack;
-extern int     hijacked_input;
+#include "config.h"
 
-extern void handleinput ( void );
+#ifdef USE_OSD
+#include <SDL.h>
+#include <stdint.h>
+struct osd {
+	uint32_t	fg, bg, cg;
+	int		active, available, cursor;
+	uint32_t	*pixels;
+	const uint8_t	*font;
+	int		x, y;
+	int		curlastx, curlasty;
+	int		width, height;
+	int		texwidth, texheight;
+	SDL_Texture	*tex;
+	SDL_PixelFormat	*pixfmt;
+};
+extern struct osd osd;
 
-// must be implemented somewhere other than input.c
-extern void input_text_event_cb ( const char *s );
+extern void osd_scroll ( void );
+extern void osd_clearbox ( int x1, int y1, int x2, int y2, uint32_t color );
+extern void osd_clearscr ( void );
+extern void osd_setcolors ( uint32_t fg, uint32_t bg, uint32_t cg );
+extern void osd_putchar ( const char c );
+extern void osd_putstr ( const char *s );
+extern int  osd_init ( SDL_Renderer *sdl_ren, SDL_PixelFormat *pixfmt, int texwidth, int texheight, const uint8_t *font );
+#endif
 
 #endif

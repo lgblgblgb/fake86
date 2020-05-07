@@ -128,37 +128,47 @@ static inline void decodeflagsword ( uint16_t x )
 	cpu.of  = (x >> 11) & 1;
 }
 
-#define CPU_CS	cpu.segregs[regcs]
-#define CPU_DS	cpu.segregs[regds]
-#define CPU_ES	cpu.segregs[reges]
-#define CPU_SS	cpu.segregs[regss]
+#define CPU_FL_CF	cpu.cf
+#define CPU_FL_PF	cpu.pf
+#define CPU_FL_AF	cpu.af
+#define CPU_FL_ZF	cpu.zf
+#define CPU_FL_SF	cpu.sf
+#define CPU_FL_TF	cpu.tf
+#define CPU_FL_IFL	cpu.ifl
+#define CPU_FL_DF	cpu.df
+#define CPU_FL_OF	cpu.of
 
-#define CPU_AX  cpu.regs.wordregs[regax]
-#define CPU_BX  cpu.regs.wordregs[regbx]
-#define CPU_CX  cpu.regs.wordregs[regcx]
-#define CPU_DX  cpu.regs.wordregs[regdx]
-#define CPU_SI  cpu.regs.wordregs[regsi]
-#define CPU_DI  cpu.regs.wordregs[regdi]
-#define CPU_BP  cpu.regs.wordregs[regbp]
-#define CPU_SP  cpu.regs.wordregs[regsp]
-#define CPU_IP	cpu.ip
+#define CPU_CS		cpu.segregs[regcs]
+#define CPU_DS		cpu.segregs[regds]
+#define CPU_ES		cpu.segregs[reges]
+#define CPU_SS		cpu.segregs[regss]
 
-#define CPU_AL  cpu.regs.byteregs[regal]
-#define CPU_BL  cpu.regs.byteregs[regbl]
-#define CPU_CL  cpu.regs.byteregs[regcl]
-#define CPU_DL  cpu.regs.byteregs[regdl]
-#define CPU_AH  cpu.regs.byteregs[regah]
-#define CPU_BH  cpu.regs.byteregs[regbh]
-#define CPU_CH  cpu.regs.byteregs[regch]
-#define CPU_DH  cpu.regs.byteregs[regdh]
+#define CPU_AX  	cpu.regs.wordregs[regax]
+#define CPU_BX  	cpu.regs.wordregs[regbx]
+#define CPU_CX  	cpu.regs.wordregs[regcx]
+#define CPU_DX  	cpu.regs.wordregs[regdx]
+#define CPU_SI  	cpu.regs.wordregs[regsi]
+#define CPU_DI  	cpu.regs.wordregs[regdi]
+#define CPU_BP  	cpu.regs.wordregs[regbp]
+#define CPU_SP  	cpu.regs.wordregs[regsp]
+#define CPU_IP		cpu.ip
 
-extern void write86 (uint32_t addr32, uint8_t value);
-extern void reset86(void);
-extern void exec86 (uint32_t execloops);
-extern uint8_t read86 (uint32_t addr32);
-extern void cpu_push ( uint16_t pushval );
-extern uint16_t cpu_pop ( void );
-extern void cpu_IRET ( void );
-extern int cpu_hlt_handler ( void );
+#define CPU_AL  	cpu.regs.byteregs[regal]
+#define CPU_BL  	cpu.regs.byteregs[regbl]
+#define CPU_CL  	cpu.regs.byteregs[regcl]
+#define CPU_DL  	cpu.regs.byteregs[regdl]
+#define CPU_AH  	cpu.regs.byteregs[regah]
+#define CPU_BH  	cpu.regs.byteregs[regbh]
+#define CPU_CH  	cpu.regs.byteregs[regch]
+#define CPU_DH  	cpu.regs.byteregs[regdh]
+
+extern void     write86  ( uint32_t addr32, uint8_t value );
+extern void     reset86  ( void );
+extern void     exec86   ( uint32_t execloops );
+extern uint8_t  read86   ( uint32_t addr32 );
+extern void     cpu_push ( uint16_t pushval );
+extern uint16_t cpu_pop  ( void );
+extern void     cpu_IRET ( void );
+extern int      cpu_hlt_handler ( void );
 
 #endif

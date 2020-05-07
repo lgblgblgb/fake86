@@ -37,7 +37,7 @@ uint8_t bootdrive = 0, hdcount = 0, fdcount = 0;
 static uint8_t sectorbuffer[512];
 
 
-uint8_t insertdisk ( uint8_t drivenum, char *filename )
+uint8_t insertdisk ( uint8_t drivenum, const char *filename )
 {
 	const char *err = "?";
 	HOSTFS_FILE *file = hostfs_open(filename, "?r+b");	// ? -> signal hostfs to use fallback mode "rb" (read-only) if the given mode (r/w here "r+b") fails
@@ -177,7 +177,7 @@ static void bios_readdisk ( uint8_t drivenum, uint16_t dstseg, uint16_t dstoff, 
 				if (read86(memdest++) != sectorbuffer[sectoffset]) {
 					// sector verify failed!
 					CPU_AL = cursect;
-					cpu.cf = 1;
+					CPU_FL_CF = 1;
 					CPU_AH = 0xBB;	// error code?? what we should say in this case????
 					return;
 				}
@@ -194,13 +194,13 @@ static void bios_readdisk ( uint8_t drivenum, uint16_t dstseg, uint16_t dstoff, 
 		goto error;			// not even one sector could be read?
 	}
 	CPU_AL = cursect;
-	cpu.cf = 0;
+	CPU_FL_CF = 0;
 	CPU_AH = 0;
 	return;
 error:
 	// AH must be set with the error code
 	CPU_AL = 0;
-	cpu.cf = 1;
+	CPU_FL_CF = 1;
 }
 
 
@@ -250,13 +250,13 @@ static void bios_writedisk ( uint8_t drivenum, uint16_t dstseg, uint16_t dstoff,
 		goto error;			// not even one sector could be written?
 	}
 	CPU_AL = cursect;
-	cpu.cf = 0;
+	CPU_FL_CF = 0;
 	CPU_AH = 0;
 	return;
 error:
 	// AH must be set with the error code
 	CPU_AL = 0;
-	cpu.cf = 1;
+	CPU_FL_CF = 1;
 }
 
 
@@ -274,11 +274,11 @@ void diskhandler ( void )
 	switch (CPU_AH) {
 		case 0: //reset disk system
 			CPU_AH = 0;
-			cpu.cf = 0; //useless function in an emulator. say success and return.
+			CPU_FL_CF = 0; //useless function in an emulator. say success and return.
 			break;
 		case 1: //return last status
 			CPU_AH = lastdiskah[CPU_DL];
-			cpu.cf = lastdiskcf[CPU_DL];
+			CPU_FL_CF = lastdiskcf[CPU_DL];
 			return;
 		case 2: //read sector(s) into memory
 			bios_readdisk(
@@ -315,12 +315,12 @@ void diskhandler ( void )
 		case 5: //format track
 			// pretend success ...
 			// TODO: at least fill area (ie, the whole track) with zeroes or something, pretending the formatting was happened :)
-			cpu.cf = 0;
+			CPU_FL_CF = 0;
 			CPU_AH = 0;
 			break;
 		case 8: //get drive parameters
 			if (disk[CPU_DL].inserted) {
-				cpu.cf = 0;
+				CPU_FL_CF = 0;
 				CPU_AH = 0;
 				CPU_CH = disk[CPU_DL].cyls - 1;
 				CPU_CL = disk[CPU_DL].sects & 63;
@@ -332,7 +332,7 @@ void diskhandler ( void )
 				} else
 					CPU_DL = hdcount;
 			} else {
-				cpu.cf = 1;
+				CPU_FL_CF = 1;
 				CPU_AH = 0xAA;
 			}
 			break;
@@ -345,7 +345,7 @@ void diskhandler ( void )
 				CPU_CX = (disk[drivenum].filesize >> 9) >> 16;	// number of blocks, high word
 				CPU_DX = (disk[drivenum].filesize >> 9) & 0xFFFF;	// number of blocks, low word
 				CPU_AL = CPU_AH;
-				cpu.cf = 0;
+				CPU_FL_CF = 0;
 			} else {
 				printf("Requesting int 13h / function 15h for drive %02Xh\n", CPU_DL);
 				/*CPU_AH = 0;	// no such device
@@ -353,18 +353,18 @@ void diskhandler ( void )
 				CPU_CX = 0;
 				CPU_DX = 0;*/
 				CPU_AX = 0x0101;
-				cpu.cf = 1;
+				CPU_FL_CF = 1;
 			}
 			break;
 #endif
 		default:
 			printf("BIOS: unknown Int 13h service was requested: %02Xh\n", CPU_AH);
-			cpu.cf = 1;	// unknown function was requested?
+			CPU_FL_CF = 1;	// unknown function was requested?
 			CPU_AH = 1;
 			break;
 	}
 	lastdiskah[CPU_DL] = CPU_AH;
-	lastdiskcf[CPU_DL] = cpu.cf;
+	lastdiskcf[CPU_DL] = CPU_FL_CF;
 	if (CPU_DL & 0x80)
 		RAM[0x474] = CPU_AH;
 }

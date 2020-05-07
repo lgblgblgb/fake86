@@ -221,6 +221,11 @@ static int EmuThread(void *ptr)
 int main ( int argc, char *argv[] )
 {
 	puts(FAKE86_BANNER_STRING);
+	// Initialize SDL with "nothing". So we delay audo/video/etc (whatever needed later) initialization.
+	// However this initalize SDL for using its own functionality only, like SDL_GetPrefPath and other things!
+        if (SDL_Init(0))
+		return sdl_error("Cannot pre-initialize SDL2");
+	atexit(sdl_shutdown);
 	if (hostfs_init())
 		return -1;
 	parsecl(argc, argv);

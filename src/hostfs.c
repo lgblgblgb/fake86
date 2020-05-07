@@ -144,10 +144,6 @@ cry:
 
 int hostfs_init ( void )
 {
-	// Initialize SDL with "nothing". So we delay audo/video/etc (whatever needed later) initialization.
-	// However this initalize SDL for using its own functionality only, like SDL_GetPrefPath and other things!
-	if (SDL_Init(0))
-		return sdl_error("Cannot pre-initialize SDL2");
 	app_basepath = SDL_GetBasePath();
 	if (!app_basepath)
 		return sdl_error("Cannot determine base directory");

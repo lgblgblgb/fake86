@@ -27,8 +27,8 @@ Main goals, kinda roadmap (only some ideas, far from being a complete list):
 
 * Port to SDL2 [DONE]
 * Move file operations to SDL2 [DONE]
-* Move thread handling to SDL2 [TODO]
-* Clean up source indenting [IN-PROGRESS]
+* Move thread handling to SDL2 [DONE]
+* Clean up source indenting / organization [IN-PROGRESS]
 * Re-orgranize the tons of used global variables (maybe into structs) [TODO]
 * Kill as much as possible non-static globals [IN-PROGRESS]
 * Clean up ugly externs everywhere, have proper .h files [DONE]
@@ -37,17 +37,20 @@ Main goals, kinda roadmap (only some ideas, far from being a complete list):
 * Internal own Fake-BIOS, this is a BIG task [IN-PROGRESS]
 * Clean up internal logic, layout and implementation of ... well everything [IN-PROGRESS]
 * Better separation of various tasks (ie CPU emulator is CPU emulator ONLY) [IN-PROGRESS]
-* Maybe rewrite CPU emulation fully, to be faster/more clener [TODO]
+* Maybe rewrite CPU emulation fully, to be faster/more cleaner [TODO]
 * Enhance emulation of various things [TODO]
 * Kill various 'hacks' needed because of emulation problems [TODO]
 * Provide "emulation hooks" internal OS (DOS) can use to interact with the host [TODO]
 * Enhance emulation performance [TODO]
+* Rewrite at least these modules: "console" and parameter parsing [TODO]
 * Introduce some crude speed control (a given emulated CPU clock or so) [TODO]
 * PC-AT like features, both on hardware (including HMA!) and software (BIOS) level [TODO]
 * Probably supporting 286 protected mode later [TODO]
 * Text-only mode for emulation from a terminal/console! [TODO]
 * Wild idea, include optinally some DOS implementation though it sounds like DOSBOX a bit [TODO/FORGET?]
-* Wild idea, allow optinal KVM accelerated "CPU implementation" on Linux [TODO]
+* Wild idea, allow optinal KVM accelerated "CPU implementation" on Linux [IN-PROGRESS]
+
+(note "DONE" means "basically have something", but maybe far from perfect)
 
 ===============================================================================
 

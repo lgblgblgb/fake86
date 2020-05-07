@@ -35,15 +35,16 @@
 #include "render.h"
 
 uint8_t keyboardwaitack = 0;
+int hijacked_input = 0;
 static uint8_t keydown[0x100];
 
-static int translatescancode ( /*uint16_t keyval*/ SDL_Keycode keyval )
+static int translatescancode_from_sdl ( SDL_Keycode keyval )
 {
 	//printf("translatekey for 0x%04X %s\n", keyval, SDL_GetKeyName(keyval));
 	switch (keyval) {
-		case SDLK_ESCAPE:	return 0x01;
+		case SDLK_ESCAPE:	return 0x01;		// escape
 		case 0x30:		return 0x0B;		// zero
-		case 0x31:
+		case 0x31:					// numeric keys 1-9
 		case 0x32:
 		case 0x33:
 		case 0x34:
@@ -51,7 +52,7 @@ static int translatescancode ( /*uint16_t keyval*/ SDL_Keycode keyval )
 		case 0x36:
 		case 0x37:
 		case 0x38:
-		case 0x39:		return keyval - 0x2F;	//other number keys
+		case 0x39:		return keyval - 0x2F;
 		case 0x2D:		return 0x0C;
 		case 0x3D:		return 0x0D;
 		case SDLK_BACKSPACE:	return 0x0E;
@@ -113,8 +114,8 @@ static int translatescancode ( /*uint16_t keyval*/ SDL_Keycode keyval )
 		case SDLK_F8:		return 0x42;	// F8
 		case SDLK_F9:		return 0x43;	// F9
 		case SDLK_F10:		return 0x44;	// F10
-		case SDLK_NUMLOCKCLEAR:	return 0x45;
-		case SDLK_SCROLLLOCK:	return 0x46;
+		case SDLK_NUMLOCKCLEAR:	return 0x45;	// numlock
+		case SDLK_SCROLLLOCK:	return 0x46;	// scroll lock
 		case SDLK_KP_7:
 		case SDLK_HOME:		return 0x47;
 		case SDLK_KP_8:
@@ -169,12 +170,26 @@ void handleinput ( void )
 	int translated_key;
 	if (SDL_PollEvent (&event) ) {
 		switch (event.type) {
+			case SDL_TEXTEDITING:
+				input_text_event_cb(event.edit.text);
+				break;
+			case SDL_TEXTINPUT:
+				input_text_event_cb(event.text.text);
+				break;
 			case SDL_KEYDOWN:
-				translated_key = translatescancode(event.key.keysym.sym);
+				if (event.key.keysym.sym < 32) {
+					char fake_text[2];
+					fake_text[0] = event.key.keysym.sym;
+					fake_text[1] = 0;
+					input_text_event_cb(fake_text);
+				}
+				translated_key = translatescancode_from_sdl(event.key.keysym.sym);
 				if (translated_key >= 0) {
-					portram[0x60] = translated_key;
-					portram[0x64] |= 2;
-					doirq(1);
+					if (!hijacked_input) {
+						portram[0x60] = translated_key;
+						portram[0x64] |= 2;
+						doirq(1);
+					}
 					//printf("%02X\n", translatescancode(event.key.keysym.sym));
 					keydown[translated_key] = 1;
 					if (keydown[0x38] && keydown[0x1D] && (SDL_GetRelativeMouseMode() == SDL_TRUE)) {
@@ -190,15 +205,17 @@ void handleinput ( void )
 						scrmodechange = 1;
 						break;
 					}
-				} else
-					printf("Unsupported key: %s [%d]\n", SDL_GetKeyName(event.key.keysym.sym), event.key.keysym.sym);
+				} else if (!hijacked_input)
+					printf("INPUT: Unsupported key: %s [%d]\n", SDL_GetKeyName(event.key.keysym.sym), event.key.keysym.sym);
 				break;
 			case SDL_KEYUP:
-				translated_key = translatescancode(event.key.keysym.sym);
+				translated_key = translatescancode_from_sdl(event.key.keysym.sym);
 				if (translated_key >= 0) {
-					portram[0x60] = translated_key | 0x80;
-					portram[0x64] |= 2;
-					doirq(1);
+					if (!hijacked_input) {
+						portram[0x60] = translated_key | 0x80;
+						portram[0x64] |= 2;
+						doirq(1);
+					}
 					keydown[translated_key] = 0;
 				}
 				break;

@@ -178,7 +178,7 @@ uint8_t read86(uint32_t addr32) {
 	if ((addr32 & 0xFFF00) == 0x400)
 		printf("DEBUG: CPU accesses (READ) BDA at %Xh, value there: %Xh\n", addr32, RAM[addr32]);
 #endif
-	if (!didbootstrap) {
+	if (!didbootstrap && !internalbios) {
 		RAM[0x410] = 0x41; // ugly hack to make BIOS always believe we
 				   // have an EGA/VGA card installed
 		RAM[0x475] = hdcount; // the BIOS doesn't have any concept of

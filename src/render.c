@@ -32,6 +32,10 @@
 #include "video.h"
 #include "cpu.h"
 #include "ports.h"
+#ifdef USE_OSD
+#include "bindata.h"
+#include "osd.h"
+#endif
 
 // For texture size we want to use the largest width and height for
 // any emulated PC mode!! Since we will update only parts of this
@@ -41,6 +45,12 @@
 #define TEXTURE_WIDTH	720
 #define TEXTURE_HEIGHT	480
 #define PIXEL_FORMAT	SDL_PIXELFORMAT_ARGB8888
+
+#ifdef USE_OSD
+#define OSD_WIDTH	720
+#define OSD_HEIGHT	480
+#endif
+
 
 #if 0
 #ifdef _WIN32
@@ -68,7 +78,6 @@ static SDL_Renderer *sdl_ren = NULL;
 static SDL_Texture  *sdl_tex = NULL;
 SDL_PixelFormat *sdl_pixfmt = NULL;
 
-
 int sdl_error ( const char *msg )
 {
         fprintf(stderr, "SDL2_FATAL: %s: %s\n", msg, SDL_GetError());
@@ -81,6 +90,11 @@ void setwindowtitle ( const char *extra )
 	char temptext[256];
 	sprintf(temptext, "%s%s", windowtitle, extra ? extra : "");
 	SDL_SetWindowTitle(sdl_win, temptext);
+}
+
+
+void sdl_shutdown ( void )
+{
 }
 
 
@@ -116,6 +130,10 @@ int initscreen ( const char *ver )
 		sdl_pixfmt->Rloss,  sdl_pixfmt->Gloss,  sdl_pixfmt->Bloss,  sdl_pixfmt->Aloss,
 		sdl_pixfmt->Rshift, sdl_pixfmt->Gshift, sdl_pixfmt->Bshift, sdl_pixfmt->Ashift
 	); */
+#ifdef USE_OSD
+	if (osd_init(sdl_ren, sdl_pixfmt, OSD_WIDTH, OSD_HEIGHT, mem_asciivga_dat))
+		puts("OSD: WARNING: OSD initialization failure, OSD WON'T BE AVAILABLE!");
+#endif
 	sprintf(windowtitle, "%s", ver);
 	setwindowtitle(NULL);
 	if (initcga()) {
@@ -581,6 +599,20 @@ static void draw ( void )
 	SDL_UnlockTexture(sdl_tex);
 	SDL_RenderClear(sdl_ren);
 	SDL_RenderCopy(sdl_ren, sdl_tex, &pia.rect, NULL);
+#ifdef USE_OSD
+	if (osd.active) {
+		int passes = 0;
+		if (passes == 0) {
+			if (SDL_UpdateTexture(osd.tex, NULL, osd.pixels, osd.texwidth * 4))
+				sdl_error("OSD:SDL_UpdateTexture");
+			passes = 20;
+		} else passes--;
+		if (SDL_SetTextureAlphaMod(osd.tex, 0xC0))
+			sdl_error("OSD:SDL_SetTextureAlphaMod");
+		if (SDL_RenderCopy(sdl_ren, osd.tex, NULL, NULL))
+			sdl_error("OSD:SDL_RenderCopy");
+	}
+#endif
 	SDL_RenderPresent(sdl_ren);
 #if 0
 	if (nosmooth) {
