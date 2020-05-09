@@ -38,17 +38,17 @@ struct osd osd;
 
 void osd_scroll ( void )
 {
-	memmove(osd.pixels, osd.pixels + osd.texwidth * 16, osd.texwidth * (osd.texheight - 16) * 4);
+	memmove(osd.pixels, osd.pixels + osd.texwidth * osd.fontheight, osd.texwidth * (osd.texheight - osd.fontheight) * 4);
 	osd_clearbox(0, osd.height - 1, osd.width - 1, osd.height - 1, osd.bg);
 }
 
 
 void osd_clearbox ( int x1, int y1, int x2, int y2, uint32_t color )
 {
-	x1 *= 9;
-	y1 *= 16;
-	x2 = x2 * 9 + 8;
-	y2 = y2 * 16 + 15;
+	x1 *= osd.fontwidth;
+	y1 *= osd.fontheight;
+	x2 = (x2 + 1) * osd.fontwidth - 1;
+	y2 = (y2 + 1) * osd.fontheight - 1;
 	while (y1 <= y2) {
 		uint32_t *pix = osd.pixels + x1 + y1 * osd.texwidth;
 		int x = x1;
@@ -94,13 +94,21 @@ void osd_putchar ( const char c )
 {
 	if (!osd.available)
 		return;
-	uint32_t *pix = osd.pixels + osd.x * 9 + osd.y * 16 * osd.texwidth;
-	const uint8_t *fnt = osd.font + (unsigned int)c * 128;
-	for (int y = 0; y < 16; y++) {
-		for (int x = 0; x < 8; x++)
-			*pix++ = (*fnt++) ? osd.fg : osd.bg;
-		*pix++ = osd.bg;
-		pix += osd.texwidth - 9;
+	uint32_t *pix = osd.pixels + osd.x * osd.fontwidth + osd.y * osd.fontheight * osd.texwidth;
+	const uint8_t *fnt = osd.font + ((unsigned int)c * osd.fontheight);
+	for (int y = 0; y < osd.fontheight; y++) {
+		uint8_t ch = *fnt++;
+		*pix++ = (ch & 0x80) ? osd.fg : osd.bg;
+		*pix++ = (ch & 0x40) ? osd.fg : osd.bg;
+		*pix++ = (ch & 0x20) ? osd.fg : osd.bg;
+		*pix++ = (ch & 0x10) ? osd.fg : osd.bg;
+		*pix++ = (ch & 0x08) ? osd.fg : osd.bg;
+		*pix++ = (ch & 0x04) ? osd.fg : osd.bg;
+		*pix++ = (ch & 0x02) ? osd.fg : osd.bg;
+		*pix++ = (ch & 0x01) ? osd.fg : osd.bg;
+		for (int a = 8; a < osd.fontwidth; a++)
+			*pix++ = osd.bg;
+		pix += osd.texwidth - osd.fontwidth;
 	}
 	osd.active = 1;
 }
@@ -152,6 +160,10 @@ void osd_putstr ( const char *s )
 
 int osd_init ( SDL_Renderer *sdl_ren, SDL_PixelFormat *pixfmt, int texwidth, int texheight, const uint8_t *font )
 {
+	osd.fontwidth = 8;
+	osd.fontheight = 16;
+	if (osd.fontwidth < 8)
+		osd.fontwidth = 8;
 	osd.texwidth = texwidth;
 	osd.texheight = texheight;
 	osd.pixfmt = pixfmt;
@@ -181,8 +193,8 @@ int osd_init ( SDL_Renderer *sdl_ren, SDL_PixelFormat *pixfmt, int texwidth, int
 	osd.font = font;
 	osd.x = 0;
 	osd.y = 0;
-	osd.width = osd.texwidth / 9;
-	osd.height = osd.texheight / 16;
+	osd.width = osd.texwidth / osd.fontwidth;
+	osd.height = osd.texheight / osd.fontheight;
 	osd.cursor = 0;
 	printf("OSD: subsystem available with %dx%d pixels and %dx%d characters\n", osd.texwidth, osd.texheight, osd.width, osd.height);
 	return 0;

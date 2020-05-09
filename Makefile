@@ -14,8 +14,8 @@ DATAPATH	= /usr/local/share/fake86
 NETWORKEMU	=
 CFLAGS		= -std=c11 -Ofast -Wall -pipe -DPATH_DATAFILES=\"$(DATAPATH)/\" -D_DEFAULT_SOURCE $(NETWORKEMU)
 CFLAGS_WIN	= -std=c11 -Ofast -Wall -pipe -D_DEFAULT_SOURCE $(NETWORKEMU)
-GENFLAGS	= -fno-common
-GENFLAGS_WIN	= -fno-common
+GENFLAGS	= -fno-common -flto
+GENFLAGS_WIN	= -fno-common -flto
 INCLUDE		= -Isrc
 LIBS		= -lX11
 LIBS_WIN	=

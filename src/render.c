@@ -47,8 +47,8 @@
 #define PIXEL_FORMAT	SDL_PIXELFORMAT_ARGB8888
 
 #ifdef USE_OSD
-#define OSD_WIDTH	720
-#define OSD_HEIGHT	480
+#define OSD_WIDTH	WINDOW_WIDTH
+#define OSD_HEIGHT	WINDOW_HEIGHT
 #endif
 
 
@@ -308,10 +308,10 @@ static uint32_t *start_pixel_access ( int nw, int nh )
 
 static void draw ( void )
 {
-	uint32_t planemode, vgapage, color, chary, charx, vidptr, divx, divy, curchar, curpixel, usepal, intensity, blockw, curheight;
+	//uint32_t planemode, vgapage, color, chary, charx, vidptr, divx, divy, curchar, curpixel, usepal, intensity, blockw, curheight;
 	//x1, y1;
 	// Nice. Now time to render madness.
-	Uint32 *pix;
+	//Uint32 *pix;
 	switch (vidmode) {
 		case 0:
 		case 1:
@@ -319,10 +319,41 @@ static void draw ( void )
 		case 3:
 		case 7:
 		case 0x82:
-			pix = start_pixel_access(640, 400);
-			vgapage = ( (uint32_t) VGA_CRTC[0xC]<<8) + (uint32_t) VGA_CRTC[0xD];
+			{
+#define NEW_RENDER_DRAW
+#ifdef NEW_RENDER_DRAW
+			uint32_t *pix = start_pixel_access(cols * 8, 400);
+			const uint32_t vgapage = ((uint32_t)VGA_CRTC[0xC] << 8) + (uint32_t)VGA_CRTC[0xD];
+			const uint8_t *vp = RAM + (((portram[0x3D8] == 9) && (portram[0x3D4] == 9)) ? vgapage : 0) + videobase;
+			const uint8_t *fp = fontcga;
+			for (int y = 0; y < 400; y++) {
+				for (int x = 0; x < cols; x++) {
+					const uint8_t dat = fp[(*vp++) << 4];
+					const uint8_t ci = *vp++;
+					const uint32_t fg = vidcolor ? palettecga[ci & 15] : ((!(ci & 0x70)) ? palettecga[7] : palettecga[0]);
+					const uint32_t bg = vidcolor ? palettecga[ci >> 4] : ((!(ci & 0x70)) ? palettecga[0] : palettecga[7]);
+					*pix++ = (dat & 0x80) ? fg : bg;
+					*pix++ = (dat & 0x40) ? fg : bg;
+					*pix++ = (dat & 0x20) ? fg : bg;
+					*pix++ = (dat & 0x10) ? fg : bg;
+					*pix++ = (dat & 0x08) ? fg : bg;
+					*pix++ = (dat & 0x04) ? fg : bg;
+					*pix++ = (dat & 0x02) ? fg : bg;
+					*pix++ = (dat & 0x01) ? fg : bg;
+				}
+				pix += pia.tail;
+				if ((y & 15) != 15) {
+					vp -= cols * 2;
+					fp++;
+				} else
+					fp = fontcga;
+			}
+#else
+			uint32_t *pix = start_pixel_access(640, 400);
+			uint32_t vgapage = ( (uint32_t) VGA_CRTC[0xC]<<8) + (uint32_t) VGA_CRTC[0xD];
 			for (int y = 0; y < 400; y++) {
 				for (int x = 0; x < 640; x++) {
+					uint32_t charx, chary, divx, vidptr, curchar, color;
 					if (cols==80) {
 						charx = x/8;
 						divx = 1;
@@ -366,18 +397,22 @@ static void draw ( void )
 				}
 				pix += pia.tail;
 			}
+#endif
+			}
 			break;
 		case 4:
 		case 5:
-			pix = start_pixel_access(320, 200);
-			usepal = (portram[0x3D9]>>5) & 1;
-			intensity = ( (portram[0x3D9]>>4) & 1) << 3;
+			{
+			uint32_t *pix = start_pixel_access(320, 200);
+			uint32_t usepal = (portram[0x3D9]>>5) & 1;
+			uint32_t intensity = ( (portram[0x3D9]>>4) & 1) << 3;
 			for (int y = 0; y < 200; y++) {
 				for (int x = 0; x < 320; x++) {
-					charx = x;
-					chary = y;
-					vidptr = videobase + ( (chary>>1) * 80) + ( (chary & 1) * 8192) + (charx >> 2);
-					curpixel = RAM[vidptr];
+					uint32_t charx = x;
+					uint32_t chary = y;
+					uint32_t vidptr = videobase + ( (chary>>1) * 80) + ( (chary & 1) * 8192) + (charx >> 2);
+					uint32_t curpixel = RAM[vidptr];
+					uint32_t color;
 					switch (charx & 3) {
 						case 3:
 							curpixel = curpixel & 3;
@@ -408,31 +443,35 @@ static void draw ( void )
 				}
 				pix += pia.tail;
 			}
+			}
 			break;
 		case 6:
-			pix = start_pixel_access(640, 200);
+			{
+			uint32_t *pix = start_pixel_access(640, 200);
 			for (int y = 0; y < 200; y++) {
 				for (int x = 0; x < 640; x++) {
-					charx = x;
-					chary = y;
-					vidptr = videobase + ( (chary>>1) * 80) + ( (chary&1) * 8192) + (charx>>3);
-					curpixel = (RAM[vidptr]>> (7- (charx&7) ) ) &1;
-					color = palettecga[curpixel*15];
+					uint32_t charx = x;
+					uint32_t chary = y;
+					uint32_t vidptr = videobase + ( (chary>>1) * 80) + ( (chary&1) * 8192) + (charx>>3);
+					uint32_t curpixel = (RAM[vidptr]>> (7- (charx&7) ) ) &1;
+					uint32_t color = palettecga[curpixel*15];
 					//prestretch[y][x] = color;
 					//prestretch[y+1][x] = color;
 					*pix++ = color;
 				}
 				pix += pia.tail;
 			}
+			}
 			break;
 		case 127:
-			pix = start_pixel_access(720, 348);
+			{
+			uint32_t *pix = start_pixel_access(720, 348);
 			for (int y = 0; y < 348; y++) {
 				for (int x = 0; x < 720; x++) {
-					charx = x;
-					chary = y>>1;
-					vidptr = videobase + ( (y & 3) << 13) + (y >> 2) *90 + (x >> 3);
-					curpixel = (RAM[vidptr]>> (7- (charx&7) ) ) &1;
+					uint32_t charx = x;
+					//uint32_t chary = y>>1;
+					uint32_t vidptr = videobase + ( (y & 3) << 13) + (y >> 2) *90 + (x >> 3);
+					uint32_t curpixel = (RAM[vidptr]>> (7- (charx&7) ) ) &1;
 #if 0
 #ifdef __BIG_ENDIAN__
 					if (curpixel)
@@ -449,14 +488,17 @@ static void draw ( void )
 				}
 				pix += pia.tail;
 			}
+			}
 			break;
 		case 0x8: //160x200 16-color (PCjr)
+			{
 			//nw = 640; //fix this
 			//nh = 400; //part later
-			pix = start_pixel_access(640, 400);
+			uint32_t *pix = start_pixel_access(640, 400);
 			for (int y = 0; y < 400; y++) {
 				for (int x = 0; x < 640; x++) {
-					vidptr = 0xB8000 + (y>>2) *80 + (x>>3) + ( (y>>1) &1) *8192;
+					uint32_t vidptr = 0xB8000 + (y>>2) *80 + (x>>3) + ( (y>>1) &1) *8192;
+					uint32_t color;
 					if ( ( (x>>1) &1) ==0)
 						color = palettecga[RAM[vidptr] >> 4];
 					else
@@ -466,14 +508,17 @@ static void draw ( void )
 				}
 				pix += pia.tail;
 			}
+			}
 			break;
 		case 0x9: //320x200 16-color (Tandy/PCjr)
+			{
 			// nw = 640; //fix this
 			// nh = 400; //part later
-			pix = start_pixel_access(640, 400);
+			uint32_t *pix = start_pixel_access(640, 400);
 			for (int y = 0; y < 400; y++) {
 				for (int x = 0; x < 640; x++) {
-					vidptr = 0xB8000 + (y>>3) *160 + (x>>2) + ( (y>>1) &3) *8192;
+					uint32_t vidptr = 0xB8000 + (y>>3) *160 + (x>>2) + ( (y>>1) &3) *8192;
+					uint32_t color;
 					if ( ( (x>>1) &1) ==0)
 						color = palettecga[RAM[vidptr] >> 4];
 					else
@@ -482,20 +527,22 @@ static void draw ( void )
 					*pix++ = color;
 				}
 				pix += pia.tail;
+			}
 			}
 			break;
 		case 0xD:
 		case 0xE:
+			{
 			//nw = 640; //fix this
 			//nh = 400; //part later
-			pix = start_pixel_access(640, 400);
+			uint32_t *pix = start_pixel_access(640, 400);
 			for (int y = 0; y < 400; y++) {
 				for (int x = 0; x < 640; x++) {
-					divx = x>>1;
-					divy = y>>1;
-					vidptr = divy*40 + (divx>>3);
+					uint32_t divx = x>>1;
+					uint32_t divy = y>>1;
+					uint32_t vidptr = divy*40 + (divx>>3);
 					int x1 = 7 - (divx & 7);
-					color = (VRAM[vidptr] >> x1) & 1;
+					uint32_t color = (VRAM[vidptr] >> x1) & 1;
 					color += ( ( (VRAM[0x10000 + vidptr] >> x1) & 1) << 1);
 					color += ( ( (VRAM[0x20000 + vidptr] >> x1) & 1) << 2);
 					color += ( ( (VRAM[0x30000 + vidptr] >> x1) & 1) << 3);
@@ -505,16 +552,18 @@ static void draw ( void )
 				}
 				pix += pia.tail;
 			}
+			}
 			break;
 		case 0x10:
+			{
 			//nw = 640;
 			//nh = 350;
-			pix = start_pixel_access(640, 350);
+			uint32_t *pix = start_pixel_access(640, 350);
 			for (int y = 0; y < 350; y++) {
 				for (int x = 0; x < 640; x++) {
-					vidptr = y*80 + (x>>3);
+					uint32_t vidptr = y*80 + (x>>3);
 					int x1 = 7 - (x & 7);
-					color = (VRAM[vidptr] >> x1) & 1;
+					uint32_t color = (VRAM[vidptr] >> x1) & 1;
 					color |= ( ( (VRAM[0x10000 + vidptr] >> x1) & 1) << 1);
 					color |= ( ( (VRAM[0x20000 + vidptr] >> x1) & 1) << 2);
 					color |= ( ( (VRAM[0x30000 + vidptr] >> x1) & 1) << 3);
@@ -524,16 +573,18 @@ static void draw ( void )
 				}
 				pix += pia.tail;
 			}
+			}
 			break;
 		case 0x12:
+			{
 			//nw = 640;
 			//nh = 480;
-			pix = start_pixel_access(640, 480);
-			vgapage = ( (uint32_t) VGA_CRTC[0xC]<<8) + (uint32_t) VGA_CRTC[0xD];
+			uint32_t *pix = start_pixel_access(640, 480);
+			//uint32_t vgapage = ( (uint32_t) VGA_CRTC[0xC]<<8) + (uint32_t) VGA_CRTC[0xD];
 			for (int y = 0; y < pia.rect.h; y++) {
 				for (int x = 0; x < pia.rect.w; x++) {
-					vidptr = y*80 + (x/8);
-					color  = (VRAM[vidptr] >> (~x & 7) ) & 1;
+					uint32_t vidptr = y*80 + (x/8);
+					uint32_t color  = (VRAM[vidptr] >> (~x & 7) ) & 1;
 					color |= ( (VRAM[vidptr+0x10000] >> (~x & 7) ) & 1) << 1;
 					color |= ( (VRAM[vidptr+0x20000] >> (~x & 7) ) & 1) << 2;
 					color |= ( (VRAM[vidptr+0x30000] >> (~x & 7) ) & 1) << 3;
@@ -542,8 +593,11 @@ static void draw ( void )
 				}
 				pix += pia.tail;
 			}
+			}
 			break;
 		case 0x13:
+			{
+			uint32_t *pix;
 			if (vtotal == 11) { //ugly hack to show Flashback at the proper resolution
 				//nw = 256;
 				//nh = 224;
@@ -553,20 +607,23 @@ static void draw ( void )
 				//nh = 200;
 				pix = start_pixel_access(320, 200);
 			}
+			int planemode;
 			if (VGA_SC[4] & 6)
 				planemode = 1;
 			else
 				planemode = 0;
-			vgapage = ( (uint32_t) VGA_CRTC[0xC]<<8) + (uint32_t) VGA_CRTC[0xD];
+			uint32_t vgapage = ( (uint32_t) VGA_CRTC[0xC]<<8) + (uint32_t) VGA_CRTC[0xD];
 			// Newer?: ->
 			// vgapage = ( (uint32_t) VGA_CRTC[0xC]<<8) + (uint32_t) VGA_CRTC[0xD];
 			for (int y = 0; y < pia.rect.h; y++) {
 				for (int x = 0; x < pia.rect.w; x++) {
+					uint32_t color;
 					if (!planemode) {
 						color = palettevga[RAM[videobase + ((vgapage + y*pia.rect.w + x) & 0xFFFF) ]];
 					//if (!planemode) {
 					//	color = palettevga[RAM[videobase + y*nw + x]];
 					} else {
+						uint32_t vidptr;
 						vidptr = y*pia.rect.w + x;
 						vidptr = vidptr/4 + (x & 3) *0x10000;
 						vidptr = vidptr + vgapage - (VGA_ATTR[0x13] & 15);
@@ -577,10 +634,16 @@ static void draw ( void )
 				}
 				pix += pia.tail;
 			}
+			}
+			break;
+		default:
+			printf("DRAW: unknown video mode %d\n", vidmode);
+			break;
 	}
 	if (vidgfxmode==0) {
 		if (cursorvisible) {
-			curheight = 2;
+			int curheight = 2;
+			int blockw;
 			if (cols == 80)
 				blockw = 8;
 			else
@@ -589,7 +652,7 @@ static void draw ( void )
 			int y1 = cursy * 8 + 8 - curheight;
 			for (int y = y1 * 2; y <= y1 * 2 + curheight - 1; y++)
 				for (int x = x1; x <= x1 + blockw - 1; x++) {
-					color = palettecga[RAM[videobase + cursy * cols * 2 + cursx * 2 + 1] & 15];
+					uint32_t color = palettecga[RAM[videobase + cursy * cols * 2 + cursx * 2 + 1] & 15];
 					//prestretch[y & 1023][x & 1023] = color;
 					pia.pix[y * TEXTURE_WIDTH + x] = color;
 

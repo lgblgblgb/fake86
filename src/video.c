@@ -41,7 +41,6 @@ uint16_t cursx, cursy, cols = 80, rows = 25, vgapage, cursorposition, cursorvisi
 uint8_t updatedscreen, clocksafe, port3da, port6;
 uint16_t VGA_SC[0x100], VGA_CRTC[0x100], VGA_ATTR[0x100], VGA_GC[0x100];
 uint32_t videobase= 0xB8000, textbase = 0xB8000;
-//uint8_t fontcga[32768];
 const uint8_t *fontcga;
 uint32_t palettecga[16], palettevga[256];
 uint32_t usefullscreen = 0, usegrabmode = 0;
@@ -263,12 +262,13 @@ void vidinterrupt(void) {
 
 int initcga ( void )
 {
-	uint8_t *fdef = SDL_malloc(32768);
+	uint8_t *fdef = SDL_malloc(sizeof mem_asciivga_dat);
+	printf("Loading fonts (%u bytes)\n", (unsigned int)(sizeof mem_asciivga_dat));
 	if (!fdef) {
 		fprintf(stderr, "Cannot allocate memory.\n");
 		return -1;
 	}
-	if (DEFAULT_FONT_FILE[0] == '\0' || hostfs_load_binary(DEFAULT_FONT_FILE, fdef, 32768, 32768, NULL) != 32768) {
+	if (DEFAULT_FONT_FILE[0] == '\0' || hostfs_load_binary(DEFAULT_FONT_FILE, fdef, sizeof mem_asciivga_dat, sizeof mem_asciivga_dat, NULL) != sizeof(mem_asciivga_dat)) {
 		SDL_free(fdef);
 		puts("Using internal font definition.");
 		fontcga = mem_asciivga_dat;

@@ -35,6 +35,7 @@ struct osd {
 	int		curlastx, curlasty;
 	int		width, height;
 	int		texwidth, texheight;
+	int		fontwidth, fontheight;
 	SDL_Texture	*tex;
 	SDL_PixelFormat	*pixfmt;
 };

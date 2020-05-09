@@ -59,7 +59,7 @@ void input_text_event_cb ( const char *s )
 
 
 #ifdef USE_OSD
-static int osd_console = 0;
+static int osd_console = 1;
 static void console_write ( const char *s )
 {
 	if (osd_console)
@@ -194,7 +194,7 @@ static void hexdump ( uint16_t seg, uint16_t ofs, unsigned int *put_seg, unsigne
 			console_write("   ");
 			skip--;
 		} else {
-			ascii[a & 15] = (p[a] >= 0x20 && p[a] < 127) ? p[a] : '.';
+			ascii[a & 15] = (*p >= 0x20 && *p < 127) ? *p : '.';
 			console_printf(" %02X", *p);
 		}
 		p++;
